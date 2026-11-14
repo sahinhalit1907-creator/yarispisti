@@ -341,7 +341,7 @@ body {
               <label>Dönüş <output id="cp-y-o"></output><input type="range" id="cp-y" min="-180" max="180" step="5" value="0"></label>
               <label>Yatış <output id="cp-b-o"></output><input type="range" id="cp-b" min="-45" max="45" step="5" value="0" disabled></label>
             </div>
-            <div class="seg" style="margin-top:6px"><button class="opt" id="cp-auto" type="button" aria-pressed="true">Yatış otomatik</button><button class="opt" id="cp-high" type="button" aria-pressed="false">Yüksek kenar</button><button class="opt" id="cp-gap" type="button" aria-pressed="false">Boşluk</button></div>
+            <div class="seg" style="margin-top:6px"><button class="opt" id="cp-auto" type="button" aria-pressed="true">Yatış otomatik</button><button class="opt" id="cp-high" type="button" aria-pressed="false">Yüksek kenar</button><button class="opt" id="cp-gap" type="button" aria-pressed="false">Boşluk</button><button class="opt" id="cp-tun" type="button" aria-pressed="false">Tünel</button></div>
             <button class="tbtn" id="cp-add" type="button" style="width:100%;margin-top:6px">Yeni özel parça ekle</button>
           </div>
           <div class="group"><h2>Parça ekle</h2><div class="palette" id="t-pal"></div></div>
@@ -673,6 +673,7 @@ var PALETTE = {
   up9:     { n: 'Yokuş',            d: '22 m · −9°',    l: 22,  p: -9 },
   up16:    { n: 'Dik yokuş',        d: '20 m · −16°',   l: 20,  p: -16 },
   ramp:    { n: 'Zıplama rampası',  d: '8 m · −18°',    l: 8,   p: -18 },
+  tunnel:  { n: 'Tünel',            d: '24 m · kapalı', l: 24, p: 0, tunnel: 1 },
   loop:    { n: 'Takla (loop)',      d: '29 m · tam tur', l: 29,  p: 0, loop: 1 },
   gap:     { n: 'Boşluk',           d: '16 m',          l: 16,  p: 20, gap: 1 },
   cl:      { n: 'Sol viraj',        d: '100° · R50',    l: 87,  p: 3, yaw: 100,  bank: 35,  high: 1 },
@@ -683,7 +684,7 @@ var PALETTE = {
   ctr:     { n: 'Dar sağ viraj',    d: '90° · R29',     l: 45,  p: 3, yaw: -90,  bank: -30, high: 1 },
   brake:   { n: 'Yavaşlatıcı',      d: '20 m',          l: 20,  p: 0, brake: 12 }
 };
-var PALETTE_ORDER = ['flat', 'flat4', 'down6', 'down12', 'down30', 'landing', 'rise4', 'up9', 'up16', 'ramp', 'loop', 'gap', 'cl', 'cr', 'cwl', 'cwr', 'ctl', 'ctr', 'brake'];
+var PALETTE_ORDER = ['flat', 'flat4', 'down6', 'down12', 'down30', 'landing', 'rise4', 'up9', 'up16', 'ramp', 'loop', 'tunnel', 'gap', 'cl', 'cr', 'cwl', 'cwr', 'ctl', 'ctr', 'brake'];
 var DEFAULT_TRACK = ['cl', 'down12', 'rise4', 'up9', 'ramp', 'gap', 'landing', 'flat4', 'cwr'];
 var MAX_PIECES = 24, MAX_LEN = 1200, MIN_R = 12;
 var customTrack = DEFAULT_TRACK.slice(), useStart = true, useFinish = true;
@@ -696,15 +697,15 @@ function cleanPiece(o) {
   var l = num(o.l, CP_LIM.l), pp = num(o.p, CP_LIM.p), yw = num(o.yaw || 0, CP_LIM.yaw), bk = num(o.bank || 0, CP_LIM.bank);
   if (l === null || pp === null || yw === null || bk === null) return null;
   if (yw !== 0) l = Math.max(l, MIN_R * Math.abs(yw) * Math.PI / 180);
-  return { l: Math.round(l), p: Math.round(pp), yaw: Math.round(yw), bank: Math.round(bk), high: o.high ? 1 : 0, gap: o.gap ? 1 : 0 };
+  return { l: Math.round(l), p: Math.round(pp), yaw: Math.round(yw), bank: Math.round(bk), high: o.high ? 1 : 0, gap: o.gap ? 1 : 0, tunnel: (o.tunnel && !o.gap) ? 1 : 0 };
 }
 function pieceOf(k) {
   if (typeof k === 'string') return PALETTE[k];
-  var d = Math.round(k.l) + ' m · ' + (k.gap ? 'boşluk · ' : '') + k.p + '°' + (k.yaw ? ' · ' + (k.yaw > 0 ? '↶' : '↷') + Math.abs(k.yaw) + '°' : '');
-  return { n: k.gap ? 'Özel boşluk' : (k.yaw ? 'Özel viraj' : 'Özel parça'), d: d, l: k.l, p: k.p, yaw: k.yaw, bank: k.bank, high: k.high, gap: k.gap };
+  var d = Math.round(k.l) + ' m · ' + (k.gap ? 'boşluk · ' : '') + (k.tunnel ? 'tünel · ' : '') + k.p + '°' + (k.yaw ? ' · ' + (k.yaw > 0 ? '↶' : '↷') + Math.abs(k.yaw) + '°' : '');
+  return { n: k.gap ? 'Özel boşluk' : (k.tunnel ? 'Özel tünel' : (k.yaw ? 'Özel viraj' : 'Özel parça')), d: d, l: k.l, p: k.p, yaw: k.yaw, bank: k.bank, high: k.high, gap: k.gap, tunnel: k.tunnel };
 }
 function trackId() {
-  return customTrack.map(function (k) { return typeof k === 'string' ? k : 'c' + [k.l, k.p, k.yaw, k.bank, k.high, k.gap].join('_'); }).join('.') + (useStart ? '' : '!s') + (useFinish ? '' : '!f');
+  return customTrack.map(function (k) { return typeof k === 'string' ? k : 'c' + [k.l, k.p, k.yaw, k.bank, k.high, k.gap].join('_') + (k.tunnel ? 't' : ''); }).join('.') + (useStart ? '' : '!s') + (useFinish ? '' : '!f');
 }
 try {
   var savedTrack = JSON.parse(localStorage.getItem('gg_track') || 'null');
@@ -742,7 +743,7 @@ function buildTrack(keys) {
       var pm = (p0 + (p1 - p0) * sm - (pc.loop ? 360 * tm : 0)) * DEG, ym = yaw + yw * tm + (pc.loop ? LOOP_PSI * (1 - Math.cos(2 * Math.PI * tm)) / 2 : 0), te = Math.min(tm, 1 - tm) / 0.2, roll; if (te > 1) te = 1; roll = bank * te * te * (3 - 2 * te);
       var d = new THREE.Vector3(-Math.sin(ym) * Math.cos(pm), -Math.sin(pm), -Math.cos(ym) * Math.cos(pm));
       var q = new THREE.Quaternion().setFromEuler(new THREE.Euler(-pm, ym, roll, 'YXZ'));
-      segs.push({ p0: p.clone(), dir: d, q: q, pi: pi, curve: !!pc.yaw, gap: !!pc.gap, brake: pc.brake || 1, loop: !!pc.loop, ln: pc.loop ? n : 0, boost: boostHere && i < BOOST_SEGS, lip: pc.high ? LIP_HIGH : (pc.low ? LIP_LOW : LIP) });
+      segs.push({ p0: p.clone(), dir: d, q: q, pi: pi, curve: !!pc.yaw, gap: !!pc.gap, brake: pc.brake || 1, loop: !!pc.loop, tunnel: !!pc.tunnel, ln: pc.loop ? n : 0, boost: boostHere && i < BOOST_SEGS, lip: pc.high ? LIP_HIGH : (pc.low ? LIP_LOW : LIP) });
       p.addScaledVector(d, S);
     }
     pitch = p1; yaw += yw;
@@ -780,10 +781,89 @@ function buildTrack(keys) {
   buildTrackMeshes();
 }
 
+/* ---------------- Takla: pürüzsüz şerit ----------------
+   Köşeli 1,6 m'lik parçalar yerine, parçaların köşe noktaları arasında Hermite eğrisiyle her parça 8'e bölünür;
+   kesit (güverte + iki kenar duvarı + orta çizgi) her örnekte yüzey normaline göre yeniden kurulur. */
+function loopSweep(rows, sec, mat, shadow, open, noShadowRecv) {
+  // rows: [{p, u, r}] ; sec: [[x, y], ...] kapalı kesit (sağ, yukarı), yüzler kesit kenarları
+  var pos = [], nor = [], idx = [], R = rows.length, C = sec.length;
+  for (var e = 0; e < (open ? C - 1 : C); e++) {
+    var a = sec[e], b = sec[(e + 1) % C], ex = b[0] - a[0], ey = b[1] - a[1], el = Math.hypot(ex, ey) || 1, nx = -ey / el, ny = ex / el;   // dış normal (kesitler saat yönünde)
+    for (var i = 0; i < R; i++) {
+      var w = rows[i];
+      [a, b].forEach(function (q) { pos.push(w.p.x + w.r.x * q[0] + w.u.x * q[1], w.p.y + w.r.y * q[0] + w.u.y * q[1], w.p.z + w.r.z * q[0] + w.u.z * q[1]); nor.push(w.r.x * nx + w.u.x * ny, w.r.y * nx + w.u.y * ny, w.r.z * nx + w.u.z * ny); });
+    }
+    var base = e * R * 2;
+    for (var k = 0; k < R - 1; k++) { var i0 = base + k * 2, i1 = base + (k + 1) * 2; idx.push(i0, i1, i0 + 1, i0 + 1, i1, i1 + 1); }
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+  var mesh = new THREE.Mesh(g, mat); mesh.castShadow = shadow !== false; mesh.receiveShadow = !noShadowRecv; mesh.frustumCulled = false; trackG.add(mesh);
+}
+function sweepRows(j0, j1, K) {
+  var rows = [];
+  var vert = function (i) { return i < N_SEG ? segs[i].p0 : trackEnd; };
+  var tan = function (i) {                         // köşe noktasındaki teğet (komşu parçaların ortalaması)
+    var a = segs[Math.max(0, i - 1)].dir, b = segs[Math.min(N_SEG - 1, i)].dir, x = a.x + b.x, y = a.y + b.y, z = a.z + b.z, l = Math.sqrt(x * x + y * y + z * z) || 1;
+    return { x: x / l * S, y: y / l * S, z: z / l * S };
+  };
+  for (var i = j0; i <= j1; i++) {
+    var sg = segs[i], P0 = vert(i), P1 = vert(i + 1), T0 = tan(i), T1 = tan(i + 1);
+    for (var k = (i === j0 ? 0 : 1); k <= K; k++) {
+      var t = k / K, t2 = t * t, t3 = t2 * t, h00 = 2 * t3 - 3 * t2 + 1, h10 = t3 - 2 * t2 + t, h01 = -2 * t3 + 3 * t2, h11 = t3 - t2;
+      var p = { x: h00 * P0.x + h10 * T0.x + h01 * P1.x + h11 * T1.x, y: h00 * P0.y + h10 * T0.y + h01 * P1.y + h11 * T1.y, z: h00 * P0.z + h10 * T0.z + h01 * P1.z + h11 * T1.z };
+      var u = { x: sg.upA.x + (sg.upB.x - sg.upA.x) * t, y: sg.upA.y + (sg.upB.y - sg.upA.y) * t, z: sg.upA.z + (sg.upB.z - sg.upA.z) * t };
+      var ul = Math.sqrt(u.x * u.x + u.y * u.y + u.z * u.z) || 1; u.x /= ul; u.y /= ul; u.z /= ul;
+      var r = { x: sg.rA.x + (sg.rB.x - sg.rA.x) * t, y: sg.rA.y + (sg.rB.y - sg.rA.y) * t, z: sg.rA.z + (sg.rB.z - sg.rA.z) * t };
+      var dp = r.x * u.x + r.y * u.y + r.z * u.z; r.x -= u.x * dp; r.y -= u.y * dp; r.z -= u.z * dp;
+      var rl = Math.sqrt(r.x * r.x + r.y * r.y + r.z * r.z) || 1; r.x /= rl; r.y /= rl; r.z /= rl;
+      rows.push({ p: p, u: u, r: r });
+    }
+  }
+  return rows;
+}
+/* tünel: yarı saydam kemer kabuk + opak kaburga halkaları; fizik etkilenmez */
+function buildTunnelMeshes() {
+  var j = 0, skin = new THREE.MeshStandardMaterial({ color: 0x6f86a8, roughness: 0.4, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false });
+  var ribM = new THREE.MeshStandardMaterial({ color: 0x3c4a62, roughness: 0.6, side: THREE.DoubleSide });
+  var W = TW / 2 + 0.3, H = Math.max(2.2, TW * 0.55 + 1.2), A = 14, arch = [], archO = [];
+  for (var a = 0; a <= A; a++) { var th = Math.PI * (1 - a / A); arch.push([Math.cos(th) * W, Math.sin(th) * H]); archO.push([Math.cos(th) * (W + 0.06), Math.sin(th) * (H + 0.06)]); }
+  while (j < N_SEG) {
+    if (!segs[j].tunnel) { j++; continue; }
+    var j0 = j; while (j < N_SEG && segs[j].tunnel && segs[j].pi === segs[j0].pi) j++;
+    var j1 = j - 1, rows = sweepRows(j0, j1, 2);
+    loopSweep(rows, arch, skin, false, true, true);
+    for (var ri = 0; ri < rows.length; ri += 4) {      // kaburga halkaları (~1,6 m'de bir)
+      var edge = ri === 0 || ri >= rows.length - 2, w = edge ? 0.5 : 0.22;
+      var base = rows[Math.min(ri, rows.length - 1)], nxt = rows[Math.min(ri + 1, rows.length - 1)];
+      var d = { x: nxt.p.x - base.p.x, y: nxt.p.y - base.p.y, z: nxt.p.z - base.p.z }, dl = Math.sqrt(d.x * d.x + d.y * d.y + d.z * d.z) || 1;
+      var b2 = { p: { x: base.p.x + d.x / dl * w, y: base.p.y + d.y / dl * w, z: base.p.z + d.z / dl * w }, u: base.u, r: base.r };
+      loopSweep([base, b2], archO, ribM, true, true);
+    }
+  }
+}
+function buildLoopMeshes() {
+  var K = 8, j = 0;
+  var deckM = new THREE.MeshStandardMaterial({ color: 0xff6a13, roughness: 0.55, side: THREE.DoubleSide }), lipM = new THREE.MeshStandardMaterial({ color: 0xe2530a, roughness: 0.5, side: THREE.DoubleSide }), stM = new THREE.MeshStandardMaterial({ color: 0xfff0c2, emissive: 0x6a5a30, roughness: 0.6, side: THREE.DoubleSide });
+  while (j < N_SEG) {
+    if (!segs[j].loop) { j++; continue; }
+    var j0 = j, pi = segs[j].pi; while (j < N_SEG && segs[j].loop && segs[j].pi === pi) j++;
+    var j1 = j - 1, rows = sweepRows(j0, j1, K), lipH = segs[j0].lip;
+    var hw = TW / 2 + 0.02, lx = TW / 2 + LW / 2;
+    loopSweep(rows, [[-hw, 0], [hw, 0], [hw, -0.14], [-hw, -0.14]], deckM);
+    loopSweep(rows, [[-lx - LW / 2, 0], [-lx - LW / 2, lipH], [-lx + LW / 2, lipH], [-lx + LW / 2, 0]], lipM);
+    loopSweep(rows, [[lx - LW / 2, 0], [lx - LW / 2, lipH], [lx + LW / 2, lipH], [lx + LW / 2, 0]], lipM);
+    for (var i2 = 0; i2 <= j1 - j0; i2++) {          // orta çizgi şeridi: her parçanın ortasında kısa dilim
+      var sr = rows.slice(i2 * K + (i2 ? 0 : 0) + Math.round(K * 0.28), i2 * K + Math.round(K * 0.72) + 1);
+      if (sr.length > 1) loopSweep(sr, [[-0.035, 0.002], [-0.035, 0.014], [0.035, 0.014], [0.035, 0.002]], stM, false);
+    }
+  }
+}
+
 /* ---------------- Pist görselleri ---------------- */
 function buildTrackMeshes() {
   disposeGroup(trackG);
-  var vis = segs.filter(function (s) { return !s.gap; });
+  var vis = segs.filter(function (s) { return !s.gap && !s.loop; });   // takla ayrı, pürüzsüz bir şeritle çizilir
   var n = vis.length;
   var deckGeo = new THREE.BoxGeometry(TW + 0.04, 0.14, SEG_L); deckGeo.translate(0, -0.07, 0);
   var lipX = TW / 2 + LW / 2;
@@ -817,9 +897,11 @@ function buildTrackMeshes() {
     mesh.frustumCulled = false; trackG.add(mesh);
   });
 
+  buildLoopMeshes(); buildTunnelMeshes();
+
   // direkler
   var pil = [];
-  vis.forEach(function (s, i) { if (i % 6 === 0 && s.c.y > 2.5 && !(s.loop && s.up.y < 0.15)) pil.push(s); });   // taklanın üst yarısında direk olmaz (halkanın içinden geçerdi)
+  segs.filter(function (s) { return !s.gap && !(s.loop && s.up.y < 0.15); }).forEach(function (s, i) { if (i % 6 === 0 && s.c.y > 2.5) pil.push(s); });   // taklanın üst yarısında direk olmaz (halkanın içinden geçerdi)
   var pilGeo = new THREE.CylinderGeometry(0.12, 0.16, 1, 10); pilGeo.translate(0, 0.5, 0);
   var pills = new THREE.InstancedMesh(pilGeo, new THREE.MeshStandardMaterial({ color: 0x4a566a, roughness: 0.7, metalness: 0.3 }), Math.max(1, pil.length));
   var q0 = new THREE.Quaternion(), pp = new THREE.Vector3();
@@ -1943,8 +2025,12 @@ function surfaceAt(px, py, pz, hint) {
   var cx = o0.x + d0.x * bt * S, cy = o0.y + d0.y * bt * S, cz = o0.z + d0.z * bt * S;
   var wx = px - cx, wy = py - cy, wz = pz - cz;
   sf.h = wx * ux + wy * uy + wz * uz; sf.l = wx * qx + wy * qy + wz * qz;
-  if (sg.lC) {                                       // takla: dairenin içinden ölç
-    var kx = sg.lC.x - px, ky = sg.lC.y - py, kz = sg.lC.z - pz, kd = Math.sqrt(kx * kx + ky * ky + kz * kz);
+  if (sg.lC) {                                       // takla: dairenin içinden ölç (merkez komşu parçayla yumuşatılır, yanal bileşen atılır)
+    var lc = sg.lC, w2 = bt - 0.5, nb = w2 < 0 ? segs[bj - 1] : segs[bj + 1], Cx = lc.x, Cy = lc.y, Cz = lc.z;
+    if (nb && nb.lC && nb.pi === sg.pi) { var ww = Math.abs(w2); Cx += (nb.lC.x - Cx) * ww; Cy += (nb.lC.y - Cy) * ww; Cz += (nb.lC.z - Cz) * ww; }
+    var kx = Cx - px, ky = Cy - py, kz = Cz - pz, lt = kx * qx + ky * qy + kz * qz;
+    kx -= qx * lt; ky -= qy * lt; kz -= qz * lt;
+    var kd = Math.sqrt(kx * kx + ky * ky + kz * kz);
     if (kd > 0.5) {
       ux = kx / kd; uy = ky / kd; uz = kz / kd; sf.h = sg.lR - kd;
       dp = qx * ux + qy * uy + qz * uz; qx -= ux * dp; qy -= uy * dp; qz -= uz * dp; ql = Math.sqrt(qx * qx + qy * qy + qz * qz) || 1; qx /= ql; qy /= ql; qz /= ql;
@@ -1982,7 +2068,7 @@ function pushContact(pt, rxw, ryw, rzw, nx, ny, nz, pen, isDeck, fwx, fwy, fwz, 
         var rr = vf * 12; if (rr > 1) rr = 1; else if (rr < -1) rr = -1;
         var froll = -rr * PH.crr * brake * (contactLoop ? Math.min(fn, m * GRAVITY * 4) : fn);   // taklada yuvarlanma direnci en çok 4 g'lik yükle sınırlı (yüksek yükte araç aşırı yavaşlamasın)
         var den = vf < 0 ? -vf : vf; if (den < 2) den = 2;
-        var sa = vl / (den * 0.12); if (sa > 1) sa = 1; else if (sa < -1) sa = -1;   // kayma açısı / doyma açısı
+        var sa = vl / (den * (contactLoop ? 0.3 : 0.12)); if (sa > 1) sa = 1; else if (sa < -1) sa = -1;   // kayma açısı / doyma açısı; taklada daha yumuşak doyar (halkanın yana kaymasında araçlar savrulmaz)
         var flat = -PH.lat * fn * sa;
         fx += ax * froll + sx * flat; fy += ay * froll + sy * flat; fz += az * froll + sz * flat;
       }
@@ -2942,6 +3028,10 @@ function pieceIcon(pc) {
     if (pc.high) { c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.globalAlpha = 0.6; c.beginPath(); for (i = 0; i <= n; i++) c[i ? 'lineTo' : 'moveTo'](X(pts[i]), Y(pts[i]) - 4); c.stroke(); c.globalAlpha = 1; }
   }
   if (pc.brake) { c.strokeStyle = '#e8425b'; c.lineWidth = 2; for (i = 2; i < n; i += 3) { c.beginPath(); c.moveTo(X(pts[i]) - 3, Y(pts[i]) + 8); c.lineTo(X(pts[i]) + 3, Y(pts[i]) + 2); c.stroke(); } }
+  if (pc.tunnel && !pc.gap) {                       // tünel: üstte kemer
+    c.strokeStyle = '#8fb4e8'; c.lineWidth = 2;
+    [0.28, 0.5, 0.72].forEach(function (f) { var q = pts[Math.round(n * f)], ax = X(q), ay = Y(q); c.beginPath(); c.moveTo(ax - 9, ay); c.quadraticCurveTo(ax - 9, ay - 15, ax, ay - 15); c.quadraticCurveTo(ax + 9, ay - 15, ax + 9, ay); c.stroke(); });
+  }
   if (!pc.yaw && pc.p < 0 && !pc.gap) {            // hızlandırıcı işareti
     c.strokeStyle = '#34f0ff'; c.lineWidth = 2;
     [0.12, 0.24].forEach(function (f) { var q = pts[Math.round(n * f)], ax = X(q), ay = Y(q) + 8; c.beginPath(); c.moveTo(ax - 3, ay + 3); c.lineTo(ax + 1, ay - 2); c.lineTo(ax + 5, ay + 3); c.stroke(); });
@@ -2966,7 +3056,7 @@ function loadSliders(k) {
   $('cp-l').value = pc.l; $('cp-p').value = pc.p; $('cp-y').value = pc.yaw || 0; $('cp-b').value = pc.bank || 0;
   var auto = (pc.bank || 0) === ((pc.yaw || 0) > 0 ? 30 : ((pc.yaw || 0) < 0 ? -30 : 0));
   cpYawAuto = auto; $('cp-auto').setAttribute('aria-pressed', auto ? 'true' : 'false'); $('cp-b').disabled = auto;
-  $('cp-high').setAttribute('aria-pressed', pc.high ? 'true' : 'false'); $('cp-gap').setAttribute('aria-pressed', pc.gap ? 'true' : 'false');
+  $('cp-high').setAttribute('aria-pressed', pc.high ? 'true' : 'false'); $('cp-gap').setAttribute('aria-pressed', pc.gap ? 'true' : 'false'); $('cp-tun').setAttribute('aria-pressed', pc.tunnel ? 'true' : 'false');
   cpLoading = false; cpLabels();
 }
 var cpLoading = false;
@@ -3028,7 +3118,7 @@ function drawMini() {
     c.setLineDash([]);
   }
   if (edit && selIdx >= 0) pass(8, function (sg) { return sg.pi === preN + selIdx ? 'rgba(255,255,255,0.45)' : null; });
-  pass(3.5, function (sg) { var fx = sg.pi < preN || sg.pi >= preN + nCus; return sg.gap ? '#8f9cb1' : (sg.boost ? '#34f0ff' : (sg.curve ? '#ffd23f' : (fx ? '#b5531a' : '#ff6a13'))); });
+  pass(3.5, function (sg) { var fx = sg.pi < preN || sg.pi >= preN + nCus; return sg.gap ? '#8f9cb1' : (sg.tunnel ? '#8fb4e8' : sg.boost ? '#34f0ff' : (sg.curve ? '#ffd23f' : (fx ? '#b5531a' : '#ff6a13'))); });
   if (edit) {                                       // parça numaraları
     c.font = '600 9px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (var ci = 0; ci < nCus; ci++) {
@@ -3098,7 +3188,7 @@ function renderTrackUI() {
     $('sel-name').textContent = (selIdx + 1) + '. ' + pcs.n + ' · ' + pcs.d;
     $('sel-l').disabled = selIdx === 0; $('sel-r').disabled = selIdx === customTrack.length - 1; $('sel-dup').disabled = !canAdd(selKey);
   }
-  ['cp-l', 'cp-p', 'cp-y', 'cp-high', 'cp-gap', 'cp-auto'].forEach(function (id) { $(id).disabled = has && !!pcs.brake; });
+  ['cp-l', 'cp-p', 'cp-y', 'cp-high', 'cp-gap', 'cp-tun', 'cp-auto'].forEach(function (id) { $(id).disabled = has && !!pcs.brake; });
   $('cp-add').disabled = customTrack.length >= MAX_PIECES;
   chipsRender(); drawMini();
 }
@@ -3152,7 +3242,7 @@ $('t-fin').addEventListener('click', function () { useFinish = !useFinish; commi
 var cpYawAuto = true;
 function cpRead() {
   var l = +$('cp-l').value, pp = +$('cp-p').value, yw = +$('cp-y').value, bk = cpYawAuto ? (yw > 0 ? 30 : (yw < 0 ? -30 : 0)) : +$('cp-b').value;
-  return cleanPiece({ l: l, p: pp, yaw: yw, bank: bk, high: $('cp-high').getAttribute('aria-pressed') === 'true', gap: $('cp-gap').getAttribute('aria-pressed') === 'true' });
+  return cleanPiece({ l: l, p: pp, yaw: yw, bank: bk, high: $('cp-high').getAttribute('aria-pressed') === 'true', gap: $('cp-gap').getAttribute('aria-pressed') === 'true', tunnel: $('cp-tun').getAttribute('aria-pressed') === 'true' });
 }
 function cpLabels() {
   var c = cpRead(); if (!c) return;
@@ -3168,7 +3258,7 @@ function cpApply() {
   customTrack[selIdx] = c; selKey = c; commitTrack();
 }
 ['cp-l', 'cp-p', 'cp-y', 'cp-b'].forEach(function (id) { $(id).addEventListener('input', cpApply); });
-['cp-high', 'cp-gap'].forEach(function (id) {
+['cp-high', 'cp-gap', 'cp-tun'].forEach(function (id) {
   var btn = $(id);
   btn.addEventListener('click', function () { btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); cpApply(); });
 });
@@ -3232,15 +3322,35 @@ function renderThumb(mi) {
   disposeGroup(g); rt.dispose();
   return url;
 }
+function fallbackThumb(mi) {
+  var W = 360, H = 225, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  var c = cv.getContext('2d'), col = '#' + ('000000' + (MODELS[mi].col >>> 0).toString(16)).slice(-6);
+  c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(180, 170, 125, 16, 0, 0, 7); c.fill();
+  c.fillStyle = col; c.beginPath();
+  c.moveTo(48, 150); c.lineTo(52, 118); c.quadraticCurveTo(110, 108, 140, 92);
+  c.quadraticCurveTo(175, 66, 215, 70); c.quadraticCurveTo(250, 76, 268, 98);
+  c.quadraticCurveTo(312, 106, 322, 124); c.lineTo(326, 150); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(190,225,245,0.85)'; c.beginPath();
+  c.moveTo(150, 98); c.quadraticCurveTo(178, 78, 212, 80); c.quadraticCurveTo(240, 84, 254, 100); c.closePath(); c.fill();
+  c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(60, 124, 256, 5);
+  [112, 266].forEach(function (x) {
+    c.fillStyle = '#15171b'; c.beginPath(); c.arc(x, 150, 28, 0, 7); c.fill();
+    c.fillStyle = '#9aa3ad'; c.beginPath(); c.arc(x, 150, 13, 0, 7); c.fill();
+  });
+  return cv.toDataURL('image/png');
+}
 function ensureThumbs() {
-  if (thumbBusy || thumbFail) return;
+  if (thumbBusy) return;
   var todo = MODELS.map(function (m, i) { return i; }).filter(function (i) { return !thumbs[MODELS[i].id]; });
   if (!todo.length) return;
   thumbBusy = true;
   var i = todo[0];
   setTimeout(function () {
-    try { if (state === 'garage') thumbs[MODELS[i].id] = renderThumb(i); else { thumbBusy = false; return; } }
-    catch (e) { thumbFail = true; try { console.error(e); } catch (x) {} }
+    if (state !== 'garage') { thumbBusy = false; return; }
+    var url = null;
+    try { url = renderThumb(i); } catch (e) { try { console.error(e); } catch (x) {} }
+    if (!url || url.length < 2000) { try { url = fallbackThumb(i); } catch (e2) { url = null; } }
+    thumbs[MODELS[i].id] = url || 'data:,';
     thumbBusy = false;
     if (tab === 'coll') { renderShelf(); ensureThumbs(); }
   }, 30);
@@ -3251,7 +3361,7 @@ function renderShelf() {
   MODELS.forEach(function (md, i) {
     var have = owns(i), cell = h('div', 'cell' + (have ? '' : ' locked') + (have && i === curModel ? ' sel' : ''));
     var tb = h('div', 'thumb');
-    if (thumbs[md.id]) { var im = h('img'); im.src = thumbs[md.id]; im.alt = md.n; tb.appendChild(im); } else tb.textContent = thumbFail ? md.n.charAt(0) : '…';
+    if (thumbs[md.id]) { var im = h('img'); im.src = thumbs[md.id]; im.alt = md.n; tb.appendChild(im); } else tb.textContent = '…';
     cell.appendChild(tb); cell.appendChild(h('div', 'cn', md.n));
     var rr = h('div', 'cr', RARITY[md.rar].n); rr.style.color = RARITY[md.rar].c; cell.appendChild(rr);
     cell.appendChild(h('div', 'cs', 'Kütle ×' + md.mass.toFixed(2) + ' · Cd ' + (md.cd >= 0 ? '+' : '') + md.cd.toFixed(2)));
