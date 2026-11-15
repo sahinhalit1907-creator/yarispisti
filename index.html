@@ -116,6 +116,16 @@ body {
 .tab { font: 800 17px var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: transparent; border: 0; border-bottom: 2px solid var(--line); padding: 8px 4px; cursor: pointer; min-height: 44px; }
 .tab[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--accent); }
 .tab:focus-visible, .mini:focus-visible, .pal:focus-visible, .tbtn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.tour-br { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+.tr-col { flex: 0 0 148px; display: flex; flex-direction: column; justify-content: space-around; gap: 6px; }
+.tr-col h3 { margin: 0 0 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); position: sticky; top: 0; }
+.tr-m { border: 1px solid var(--line); font-size: 12px; }
+.tr-p { padding: 3px 6px; border-left: 3px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr-p + .tr-p { border-top: 1px solid var(--line); }
+.tr-p.w { font-weight: 600; background: rgba(255, 106, 19, 0.14); }
+.tr-p.l { color: var(--muted); text-decoration: line-through; }
+.tr-p.me { border-left-color: var(--accent); }
+.tr-p.now { box-shadow: inset 0 0 0 1px var(--accent-2); }
 .pane { display: flex; flex-direction: column; gap: 14px; }
 .t-cv { display: block; width: 100%; background: rgba(0, 0, 0, 0.28); border: 1px solid var(--line); }
 .wk { display: grid; gap: 6px; }
@@ -257,6 +267,7 @@ body {
 #cancel { position: absolute; left: 0; right: 0; bottom: 0; width: 220px; margin: 0 auto; font-size: 22px; padding: 10px 8px; }
 #sndBtn { position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 6; font-size: 13px; padding: 7px 12px; opacity: 0.85; width: auto; }
 #lockBtn { position: absolute; right: 0; top: 48px; font-size: 13px; padding: 6px 12px; letter-spacing: 0.04em; background: var(--panel); width: auto; }
+#restartBtn { position: absolute; left: 0; top: 4px; font-size: 15px; padding: 8px 14px; letter-spacing: 0.04em; background: var(--panel); width: auto; }
 #viewBtn { position: absolute; right: 0; top: 4px; font-size: 15px; padding: 8px 14px; letter-spacing: 0.04em; background: var(--panel); }
 #mini { position: fixed; z-index: 2; right: max(10px, env(safe-area-inset-right, 0px)); top: max(10px, env(safe-area-inset-top, 0px)); width: 176px; height: 132px; pointer-events: none; background: rgba(11, 14, 19, 0.78); border: 1px solid var(--line); }
 #mini.run { top: calc(max(10px, env(safe-area-inset-top, 0px)) + 96px); }
@@ -296,7 +307,7 @@ body {
     <div id="duel" hidden></div>
     <section id="garage" class="panel" aria-label="Mühendislik ekranı">
       <div class="g-head"><div class="tag">Mühendislik ekranı · <span id="coinChip"></span></div><h1>Gravity Garage</h1></div>
-      <div class="tabs"><button class="tab" id="tab-car" type="button" aria-pressed="true">Araç</button><button class="tab" id="tab-track" type="button" aria-pressed="false">Pist</button><button class="tab" id="tab-coll" type="button" aria-pressed="false">Koleksiyon</button><button class="tab" id="tab-work" type="button" aria-pressed="false">Atölye</button></div>
+      <div class="tabs"><button class="tab" id="tab-car" type="button" aria-pressed="true">Araç</button><button class="tab" id="tab-track" type="button" aria-pressed="false">Pist</button><button class="tab" id="tab-coll" type="button" aria-pressed="false">Koleksiyon</button><button class="tab" id="tab-work" type="button" aria-pressed="false">Atölye</button><button class="tab" id="tab-tour" type="button" aria-pressed="false">Turnuva</button></div>
       <div class="g-body">
         <div class="pane" id="pane-car">
         <div class="group"><h2>Mod</h2><div class="seg" id="g-mode"></div></div>
@@ -318,6 +329,12 @@ body {
           <div class="wallet"><b id="coins">0</b><span>jeton</span><small id="collCount"></small></div>
           <p class="t-note">Yarışlardan jeton kazan, raftaki araçları satın al. Seçtiğin araç düzenlediğin oyuncunun aracı olur ve rampada kendi ağırlığı ve aerodinamiğiyle sürer.</p>
           <div class="shelf" id="shelf"></div>
+        </div>
+        <div class="pane" id="pane-tour" hidden>
+          <p class="t-note" id="tour-note"></p>
+          <div class="t-btns"><button class="tbtn" id="tour-go" type="button" hidden>Maçı oyna</button><button class="tbtn" id="tour-fast" type="button" hidden>Turu hızlı bitir</button><button class="tbtn" id="tour-all" type="button" hidden>Turnuvayı sonuna kadar oynat</button><button class="tbtn" id="tour-new" type="button">Turnuvayı başlat</button></div>
+          <div id="tour-list" style="display:grid;gap:6px"></div>
+          <div class="tour-br" id="tour-bracket"></div>
         </div>
         <div class="pane" id="pane-work" hidden>
           <p class="t-note">Şase, gövde ve tekerlek seç; araç anında önizlemede değişir. Parçaları jetonla satın al, beğendiğin kombinasyonu isimle kaydet. Kaydettiğin araçlar sonra tek dokunuşla çıkar.</p>
@@ -346,6 +363,12 @@ body {
           </div>
           <div class="group"><h2>Parça ekle</h2><div class="palette" id="t-pal"></div></div>
           <div class="group"><h2>Başlangıç / bitiş</h2><div class="seg two"><button class="opt" id="t-start" type="button" aria-pressed="true">Hazır başlangıç rampası</button><button class="opt" id="t-fin" type="button" aria-pressed="true">Hazır bitiş bölümü</button></div></div>
+          <div class="group"><h2>Kayıtlı pistler</h2>
+            <div class="wk-add"><input id="sv-name" type="text" maxlength="24" placeholder="Pist adı" aria-label="Pist adı"><button class="tbtn" id="sv-save" type="button">Kaydet</button></div>
+            <div id="sv-list" style="display:grid;gap:6px;margin-top:6px"></div>
+            <div class="wk-add" style="margin-top:6px"><input id="sv-code" type="text" placeholder="Pist kodu (paylaşmak / içe aktarmak için)" aria-label="Pist kodu"><button class="tbtn" id="sv-copy" type="button">Kodu al</button><button class="tbtn" id="sv-imp" type="button">İçe aktar</button></div>
+            <p id="sv-msg" style="margin:6px 0 0;font-size:12px;color:var(--muted);min-height:1em"></p>
+          </div>
           <div class="t-btns"><button class="tbtn" id="t-scratch" type="button" style="grid-column:1/-1">Sıfırdan başla (boş sayfa)</button><button class="tbtn" id="t-reset" type="button">Varsayılan</button><button class="tbtn" id="t-rand" type="button">Rastgele</button><button class="tbtn" id="t-clear" type="button">Temizle</button></div>
         </div>
       </div>
@@ -372,6 +395,7 @@ body {
     <div id="placeHint" hidden>Aracı rampada sağa-sola, yukarı-aşağı sürükle (ya da ok tuşları). Bıraktığın anda yola çıkar.</div>
     <button class="btn ghost" id="cancel" type="button" hidden>Garaja Dön</button>
     <button class="btn ghost" id="viewBtn" type="button" hidden>Serbest kamera</button>
+    <button class="btn ghost" id="restartBtn" type="button" hidden>↻ Yeniden başlat</button>
     <button class="btn ghost" id="lockBtn" type="button" hidden>Araca kilitli</button>
   </div>
 </div>
@@ -477,7 +501,67 @@ var MODELS = [
     lamp: 'slit', whl: [10, 0.018], doors: [-0.05, 0.12], mir: 0.2, intake: true, wing: true, splitter: true },
   { id: 'roadster', n: 'Roadster', rar: 1, price: 400, mass: 0.92, cd: -0.05, col: 0, w: 0.62, num: '77', open: true,
     body: [[-0.62, YS, .03], [-0.62, 0.22, .05], [-0.48, 0.28, .06], [-0.20, 0.28, .05], [-0.16, 0.20, .03], [0.12, 0.20, .03], [0.16, 0.28, .04], [0.40, 0.26, .07], [0.58, 0.21, .03], [0.62, 0.12, .07], [0.62, YS, .03]],
-    cab: null, wsOnly: [[0.06, 0.44], [0.17, 0.29]], lamp: 'round', whl: [5, 0.035], doors: [-0.12, 0.06], mir: 0.12, seats: true }
+    cab: null, wsOnly: [[0.06, 0.44], [0.17, 0.29]], lamp: 'round', whl: [5, 0.035], doors: [-0.12, 0.06], mir: 0.12, seats: true },
+  { id: 'slab', n: 'Gümüş Kanat', rar: 2, price: 700, mass: 0.98, cd: 0.05, col: 5, w: 0.64, num: '2X',
+    body: [[-0.64, YS, .02], [-0.64, 0.30, .02], [-0.30, 0.31, .02], [0.10, 0.28, .02], [0.62, 0.16, .03], [0.64, 0.10, .03], [0.64, YS, .02]],
+    cab: [[-0.46, 0.30, .02], [-0.34, 0.52, .03], [-0.02, 0.53, .03], [0.30, 0.26, .02]], ws: [[-0.02, 0.53], [0.30, 0.27]], rw: [[-0.34, 0.52], [-0.45, 0.31]],
+    lamp: 'rect', whl: [6, 0.03], doors: [-0.16, 0.06], mir: 0.1, intake: true, boxy: true, splitter: true },
+  { id: 'jeep', n: 'Arazi 4x4', rar: 1, price: 450, mass: 1.18, cd: 0.4, col: 2, w: 0.66, num: '44',
+    body: [[-0.62, -0.05, .03], [-0.62, 0.32, .03], [0.28, 0.32, .03], [0.40, 0.31, .03], [0.62, 0.27, .04], [0.62, -0.05, .03]],
+    cab: [[-0.58, 0.30, .02], [-0.58, 0.60, .03], [0.10, 0.62, .04], [0.22, 0.33, .02]], ws: [[0.10, 0.62], [0.22, 0.34]], rw: [[-0.58, 0.60], [-0.58, 0.31]],
+    lamp: 'round', whl: [6, 0.05], doors: [-0.28, -0.02], mir: 0.22, rack: true, tread: true, flares: true, boxy: true },
+  { id: 'evsuv', n: 'Elektrik SUV', rar: 2, price: 650, mass: 1.1, cd: 0.1, col: 3, w: 0.66, num: 'E1',
+    body: [[-0.64, -0.02, .06], [-0.64, 0.26, .08], [-0.50, 0.34, .09], [-0.05, 0.35, .08], [0.30, 0.32, .09], [0.52, 0.27, .10], [0.64, 0.18, .09], [0.64, -0.02, .06]],
+    cab: [[-0.52, 0.32, .02], [-0.40, 0.58, .08], [-0.10, 0.64, .10], [0.12, 0.58, .08], [0.34, 0.31, .02]], ws: [[0.12, 0.58], [0.34, 0.33]], rw: [[-0.40, 0.58], [-0.52, 0.33]],
+    lamp: 'slit', whl: [8, 0.03], doors: [-0.20, 0.08], mir: 0.10, round: true },
+  { id: 'kamyonet', n: 'Kamyonet', rar: 0, price: 260, mass: 1.3, cd: 0.5, col: 2, w: 0.64, num: '31',
+    body: [[-0.64, YS, .03], [-0.64, 0.27, .03], [0.30, 0.27, .03], [0.62, 0.22, .05], [0.62, YS, .03]],
+    cab: [[-0.12, 0.25, .02], [-0.12, 0.62, .04], [0.20, 0.64, .05], [0.34, 0.28, .02]], ws: [[0.20, 0.64], [0.34, 0.30]], rw: [[-0.12, 0.62], [-0.12, 0.28]],
+    lamp: 'round', whl: [6, 0.045], doors: [-0.02, 0.14], mir: 0.2, tread: true, boxy: true, kit: 'tarp' },
+  { id: 'ranger', n: 'Çift Kabin 4x4', rar: 2, price: 600, mass: 1.15, cd: 0.35, col: 0, w: 0.68, num: '4X',
+    body: [[-0.64, YS, .03], [-0.64, 0.27, .03], [0.30, 0.27, .03], [0.62, 0.24, .05], [0.62, YS, .03]],
+    cab: [[-0.28, 0.25, .02], [-0.26, 0.58, .05], [0.10, 0.60, .07], [0.30, 0.28, .02]], ws: [[0.10, 0.60], [0.30, 0.29]], rw: [[-0.26, 0.58], [-0.28, 0.28]],
+    lamp: 'round', whl: [6, 0.05], doors: [-0.16, 0.10], mir: 0.2, bed: true, bedX: [-0.68, -0.32], tread: true, flares: true, kit: 'offroad' },
+  { id: 'cekici', n: 'Çekici', rar: 1, price: 500, mass: 1.45, cd: 0.7, col: 4, w: 0.62, num: 'T1',
+    body: [[-0.66, YS, .03], [-0.66, 0.24, .03], [0.0, 0.24, .03], [0.55, 0.28, .04], [0.64, 0.26, .05], [0.64, YS, .03]],
+    cab: [[-0.04, 0.25, .02], [-0.04, 0.74, .03], [0.46, 0.76, .04], [0.56, 0.30, .02]], ws: [[0.46, 0.76], [0.56, 0.31]], rw: null,
+    lamp: 'rect', whl: [5, 0.04], doors: [0.02, 0.30], mir: 0.3, glassW: 1.0, boxy: true, tread: true, endR: 0.05, kit: 'tractor' },
+  { id: 'tir', n: 'Tır + Dorse', rar: 2, price: 750, mass: 1.7, cd: 0.8, col: 3, w: 0.62, num: 'T2',
+    body: [[-0.66, YS, .03], [-0.66, 0.24, .03], [0.0, 0.24, .03], [0.55, 0.28, .04], [0.64, 0.26, .05], [0.64, YS, .03]],
+    cab: [[-0.04, 0.25, .02], [-0.04, 0.74, .03], [0.46, 0.76, .04], [0.56, 0.30, .02]], ws: [[0.46, 0.76], [0.56, 0.31]], rw: null,
+    lamp: 'rect', whl: [5, 0.04], doors: [0.02, 0.30], mir: 0.3, glassW: 1.0, boxy: true, tread: true, endR: 0.05, kit: 'trailer' },
+  { id: 'otobus', n: 'Otobüs', rar: 1, price: 420, mass: 1.5, cd: 0.7, col: 1, w: 0.66, num: '34', open: true,
+    body: [[-0.70, YS, .04], [-0.70, 0.62, .05], [0.58, 0.66, .05], [0.70, 0.56, .06], [0.70, YS, .04]],
+    cab: null, lamp: 'rect', whl: [5, 0.04], boxy: true, endR: 0.04, kit: 'bus' },
+  { id: 'kaykay', n: 'Kaykay', rar: 1, price: 300, mass: 0.65, cd: 0.0, col: 0, w: 0.34, num: '', open: true, arch: false,
+    body: [[-0.62, 0.08, .012], [-0.62, 0.16, .014], [-0.48, 0.125, .012], [0.48, 0.125, .012], [0.62, 0.16, .014], [0.62, 0.08, .012]],
+    cab: null, lamp: 'none', whl: [4, 0.03], kit: 'skate' },
+  { id: 'drezin', n: 'Drezin', rar: 1, price: 350, mass: 1.0, cd: 0.3, col: 1, w: 0.5, num: '', open: true, arch: false,
+    body: [[-0.62, 0.02, .012], [-0.62, 0.10, .014], [0.62, 0.10, .014], [0.62, 0.02, .012]],
+    cab: null, lamp: 'none', whl: [6, 0.03], kit: 'draisine' },
+  { id: 'itfaiye', n: 'İtfaiye', rar: 2, price: 700, mass: 1.6, cd: 0.7, col: 4, w: 0.64, num: '112',
+    body: [[-0.66, YS, .03], [-0.66, 0.24, .03], [0.0, 0.24, .03], [0.55, 0.28, .04], [0.64, 0.26, .05], [0.64, YS, .03]],
+    cab: [[-0.04, 0.25, .02], [-0.04, 0.74, .03], [0.46, 0.76, .04], [0.56, 0.30, .02]], ws: [[0.46, 0.76], [0.56, 0.31]], rw: null,
+    lamp: 'rect', whl: [5, 0.04], doors: [0.02, 0.30], mir: 0.3, glassW: 1.0, boxy: true, tread: true, endR: 0.05, kit: 'fire' },
+  { id: 'ambulans', n: 'Ambulans', rar: 1, price: 380, mass: 1.3, cd: 0.6, col: 5, w: 0.64, num: '112',
+    body: [[-0.64, -0.06, .03], [-0.64, 0.50, .06], [0.20, 0.52, .07], [0.46, 0.28, .08], [0.62, 0.20, .06], [0.62, -0.06, .03]],
+    cab: [[-0.46, 0.32, .02], [-0.46, 0.46, .03], [0.20, 0.47, .03], [0.36, 0.29, .02]], ws: [[0.20, 0.47], [0.36, 0.30]], rw: null,
+    lamp: 'rect', whl: [5, 0.04], doors: [0.02, 0.26], mir: 0.2, glassW: 1.0, boxy: true, endR: 0.06, kit: 'ambulance' },
+  { id: 'traktor', n: 'Çiftlik Traktörü', rar: 1, price: 330, mass: 1.35, cd: 0.55, col: 2, w: 0.5, num: '', open: true,
+    body: [[-0.6, YS, .03], [-0.6, 0.2, .03], [0.0, 0.2, .03], [0.1, 0.3, .04], [0.6, 0.3, .06], [0.62, YS, .03]],
+    cab: null, lamp: 'none', whl: [6, 0.04], tread: true, kit: 'farm' },
+  { id: 'mikser', n: 'Beton Mikseri', rar: 1, price: 480, mass: 1.55, cd: 0.7, col: 0, w: 0.62, num: 'M3',
+    body: [[-0.66, YS, .03], [-0.66, 0.24, .03], [0.0, 0.24, .03], [0.55, 0.28, .04], [0.64, 0.26, .05], [0.64, YS, .03]],
+    cab: [[-0.04, 0.25, .02], [-0.04, 0.74, .03], [0.46, 0.76, .04], [0.56, 0.30, .02]], ws: [[0.46, 0.76], [0.56, 0.31]], rw: null,
+    lamp: 'rect', whl: [5, 0.04], doors: [0.02, 0.30], mir: 0.3, glassW: 1.0, boxy: true, tread: true, endR: 0.05, kit: 'mixer' },
+  { id: 'taksi', n: 'Taksi', rar: 0, price: 180, mass: 1.0, cd: 0.05, col: 1, w: 0.62, num: '34',
+    body: [[-0.62, YS, .03], [-0.62, 0.20, .05], [-0.52, 0.27, .07], [-0.22, 0.28, .05], [0.14, 0.28, .05], [0.40, 0.26, .08], [0.60, 0.17, .08], [0.62, YS, .03]],
+    cab: [[-0.38, 0.25, .02], [-0.17, 0.47, .08], [0.03, 0.47, .07], [0.22, 0.25, .02]], ws: [[0.03, 0.47], [0.22, 0.27]], rw: [[-0.17, 0.47], [-0.36, 0.27]],
+    lamp: 'round', whl: [5, 0.035], doors: [-0.12, 0.10], mir: 0.12, kit: 'taxi' },
+  { id: 'polis', n: 'Devriye Aracı', rar: 1, price: 320, mass: 1.1, cd: 0.1, col: 5, w: 0.64, num: '155',
+    body: [[-0.64, YS, .03], [-0.64, 0.24, .05], [-0.52, 0.29, .06], [0.12, 0.29, .05], [0.54, 0.28, .05], [0.64, 0.22, .07], [0.64, YS, .03]],
+    cab: [[-0.54, 0.27, .02], [-0.24, 0.50, .10], [0.00, 0.50, .07], [0.14, 0.27, .02]], ws: [[0.00, 0.50], [0.14, 0.29]], rw: [[-0.24, 0.50], [-0.54, 0.29]],
+    lamp: 'round', whl: [5, 0.04], doors: [-0.16, 0.04], mir: 0.08, kit: 'police' }
 ];
 
 /* kapalı yan-profil poligonu; kenar yuvarlama r ile, tekerlek kemerleri dahil */
@@ -955,14 +1039,6 @@ function buildTrackMeshes() {
   var banner = new THREE.Mesh(new THREE.BoxGeometry(TW + 1.0, 0.7, 0.12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bn) }));
   banner.position.copy(fs.p0).addScaledVector(fs.up, 3.2); banner.quaternion.copy(fs.q); trackG.add(banner);
 
-  // son tampon
-  var ls = segs[N_SEG - 1];
-  var wall = new THREE.Mesh(new THREE.BoxGeometry(TW + 2 * LW + 0.2, 1.4, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0x3a4658, roughness: 0.6 }));
-  wall.position.copy(trackEnd).addScaledVector(ls.dir, 0.3).addScaledVector(ls.up, 0.7); wall.quaternion.copy(ls.q);
-  wall.castShadow = true; trackG.add(wall);
-  var wstripe = new THREE.Mesh(new THREE.BoxGeometry(TW + 2 * LW + 0.22, 0.25, 0.52), new THREE.MeshBasicMaterial({ color: 0xff4d5e }));
-  wstripe.position.copy(wall.position).addScaledVector(ls.up, 0.3); wstripe.quaternion.copy(ls.q); trackG.add(wstripe);
 }
 
 buildTrack(customTrack);
@@ -1216,6 +1292,7 @@ function clPlan(md, x, xr, xf) {
   return hw;
 }
 /* uçlarda süper-elips yuvarlama */
+function endR(md) { return md.endR || (md.id === 'formula' ? 0.06 : 0.11); }
 function clEnd(x, xr, xf, e) {
   var d = Math.min(x - xr, xf - x);
   if (d >= e) return 1;
@@ -1296,7 +1373,7 @@ function carLoft(md0) {
   if (md.id === 'formula') { o.rx = 0.06; o.ry = 0.06; o.crown = 0.02; }
   var nP = o.nT + o.nA + o.nF, paint = [], under = [], i2;
   for (i = 0; i < st.length; i++) {
-    var x = st[i], f = clEnd(x, xr, xf, md.id === 'formula' ? 0.06 : 0.11), hw = Math.max(0.001, clPlan(md, x, xr, xf) * f), y1 = topFn(x), y0 = clArch(md, x, xr, xf);
+    var x = st[i], f = clEnd(x, xr, xf, endR(md)), hw = Math.max(0.001, clPlan(md, x, xr, xf) * f), y1 = topFn(x), y0 = clArch(md, x, xr, xf);
     if (y1 - y0 < 0.03) y1 = y0 + 0.03;
     var h = clHalf(hw, y0, y1, o), zin = Math.max(0.01, h[nP - 1][0] - CL_WELL);
     var ring = [], k;
@@ -1314,22 +1391,22 @@ function carLoft(md0) {
   if (gP.nrm[mid * 3 + 1] < 0) { clFlip(gP); clNormals(gP); }
   clNormals(gU); var midU = (st.length >> 1) * 9 + 4;
   if (gU.nrm[midU * 3 + 1] > 0) { clFlip(gU); clNormals(gU); }
-  var res = { body: gP, under: gU, nP: nP, o: o, xr: xr, xf: xf, st: st, topFn: topFn, hwAt: function (x) { return clPlan(md, x, xr, xf) * clEnd(x, xr, xf, md.id === 'formula' ? 0.06 : 0.11); } };
+  var res = { body: gP, under: gU, nP: nP, o: o, xr: xr, xf: xf, st: st, topFn: topFn, hwAt: function (x) { return clPlan(md, x, xr, xf) * clEnd(x, xr, xf, endR(md)); } };
 
   res.md = md;
   res.flankP = function (x, y) {            // x'teki yan yüzeyde yükseklik y -> yarım kesit indeksi p (kesirli)
-    var f = clEnd(x, xr, xf, md.id === 'formula' ? 0.06 : 0.11), hw = Math.max(0.001, clPlan(md, x, xr, xf) * f), y1 = topFn(x), y0 = clArch(md, x, xr, xf);
+    var f = clEnd(x, xr, xf, endR(md)), hw = Math.max(0.001, clPlan(md, x, xr, xf) * f), y1 = topFn(x), y0 = clArch(md, x, xr, xf);
     var H = y1 - y0, ry = Math.min(o.ry, H * 0.5), ye = y1, ys = ye - ry;
     var t = (ys - y) / (ys - y0 || 1); return o.nT - 1 + o.nA + Math.max(0, Math.min(1, t)) * o.nF;
   };
   res.noseHit = function (zl, y, front) {   // gövdenin burun/kuyruk yüzeyine ışın at: {x,y,z(lat),nx(ileri),nz(lat)}
     var x = front ? xf - 0.32 : xr + 0.32, dx = front ? 0.003 : -0.003, i, last = x;
     for (i = 0; i < 160; i++) {
-      var nx = x + dx, hh = clPlan(md, nx, xr, xf) * clEnd(nx, xr, xf, md.id === 'formula' ? 0.06 : 0.11);
+      var nx = x + dx, hh = clPlan(md, nx, xr, xf) * clEnd(nx, xr, xf, endR(md));
       if (Math.abs(zl) > hh || y > topFn(nx) || y < clArch(md, nx, xr, xf)) break;
       last = nx; x = nx;
     }
-    var d = 0.004, hp = clPlan(md, last + d, xr, xf) * clEnd(last + d, xr, xf, 0.11), hm = clPlan(md, last - d, xr, xf) * clEnd(last - d, xr, xf, 0.11), dh = (hp - hm) / (2 * d);
+    var d = 0.004, hp = clPlan(md, last + d, xr, xf) * clEnd(last + d, xr, xf, endR(md)), hm = clPlan(md, last - d, xr, xf) * clEnd(last - d, xr, xf, endR(md)), dh = (hp - hm) / (2 * d);
     var sg = zl >= 0 ? 1 : -1, nxl = -dh * sg * sg, nzl = sg, ln = Math.sqrt(nxl * nxl + nzl * nzl);
     var vs = (topFn(last + d) - topFn(last - d)) / (2 * d);
     return { x: last, y: y, z: zl, nx: nxl / ln * (front ? 1 : 1), nz: nzl / ln, ny: Math.max(-0.5, Math.min(0.9, vs * (front ? -1 : 1) * 0.0)) };
@@ -1505,12 +1582,12 @@ function lampTex(kind, red) {
       g.strokeStyle = '#dfe5ee'; g.lineWidth = 5; g.beginPath(); g.arc(cx, cy, 57, 0, 6.2832); g.stroke();
       g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.arc(cx, cy, 20, 0, 6.2832); g.fill();
     } else if (kind === 'slit') {
-      g.fillStyle = '#14171c'; rrect(g, 4, 6, w - 8, h - 12, 22); g.fill();
+      g.fillStyle = 'rgba(20,23,28,0.45)'; rrect(g, 4, 6, w - 8, h - 12, 22); g.fill();
       gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#bfe4ff'); gr.addColorStop(0.5, '#ffffff'); gr.addColorStop(1, '#bfe4ff');
       g.fillStyle = gr; rrect(g, 14, cy - 8, w - 28, 16, 8); g.fill();
       g.fillStyle = 'rgba(255,255,255,0.8)'; rrect(g, 20, cy + 12, w - 60, 5, 3); g.fill();
     } else {
-      g.fillStyle = '#1a1d23'; rrect(g, 6, 14, w - 12, h - 28, 12); g.fill();
+      g.fillStyle = 'rgba(26,29,35,0.5)'; rrect(g, 6, 14, w - 12, h - 28, 12); g.fill();
       gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#ffeab0');
       g.fillStyle = gr; rrect(g, 16, 24, w - 32, h - 48, 8); g.fill();
     }
@@ -1534,11 +1611,11 @@ function lampTex(kind, red) {
 }
 function grilleTex() {
   var a = cvs(256, 64), g = a.c, i;
-  g.fillStyle = '#0c0e12'; rrect(g, 2, 2, 252, 60, 14); g.fill();
-  g.strokeStyle = '#8c95a5'; g.lineWidth = 3; rrect(g, 3, 3, 250, 58, 14); g.stroke();
-  g.strokeStyle = '#3a404b'; g.lineWidth = 2;
-  for (i = 1; i < 6; i++) { g.beginPath(); g.moveTo(10, i * 10.5); g.lineTo(246, i * 10.5); g.stroke(); }
-  for (i = 1; i < 20; i++) { g.beginPath(); g.moveTo(i * 12.6, 8); g.lineTo(i * 12.6, 56); g.stroke(); }
+  g.clearRect(0, 0, 256, 64);
+  g.strokeStyle = 'rgba(205,213,226,0.95)'; g.lineWidth = 4; rrect(g, 4, 4, 248, 56, 14); g.stroke();
+  g.fillStyle = 'rgba(24,28,35,0.82)';
+  for (i = 0; i < 4; i++) rrect(g, 14, 11 + i * 12, 228, 7, 3), g.fill();
+  g.fillStyle = 'rgba(205,213,226,0.9)'; g.fillRect(124, 8, 8, 48);
   return texOf(a.cv, 4);
 }
 function plateTex(num) {
@@ -1648,7 +1725,7 @@ function buildCarModelNew(group, c, wr) {
       decalAt(true, sd * lw, ly, hsz[0], hsz[1], ht);
       decalAt(false, sd * lw, ly + 0.005, tsz[0], tsz[1], tt);
     });
-    decalAt(true, 0, ly - 0.085, W * 0.36, 0.06, grilleTex());
+    decalAt(true, 0, ly - 0.08, W * 0.3, 0.045, grilleTex());
     decalAt(false, 0, ly - 0.06, 0.13, 0.04, plateTex(md.num));
   }
   // egzoz
@@ -1663,7 +1740,7 @@ function buildCarModelNew(group, c, wr) {
   }
   // pikap kasası
   if (md.bed) {
-    var by0 = 0.27, bx0 = -0.66, bx1 = -0.16;
+    var by0 = 0.27, bx0 = md.bedX ? md.bedX[0] : -0.66, bx1 = md.bedX ? md.bedX[1] : -0.16;
     box(W * 0.9, 0.012, bx1 - bx0 - 0.02, dark, 0, by0 + 0.008, -(bx0 + bx1) / 2);
     [-1, 1].forEach(function (sd) { box(0.03, 0.13, bx1 - bx0, paint, sd * (W * 0.5 - 0.02), by0 + 0.065, -(bx0 + bx1) / 2); });
     box(W * 0.92, 0.13, 0.03, paint, 0, by0 + 0.065, -bx0 - 0.02); box(W * 0.92, 0.13, 0.03, paint, 0, by0 + 0.065, -bx1 + 0.01);
@@ -1730,6 +1807,124 @@ function buildCarModelNew(group, c, wr) {
     if (md.arch !== false) { var kb = new THREE.Mesh(new THREE.BoxGeometry(0.03, wr * 0.32, wr * 0.5), cal); kb.position.set(q[0] * tw * 0.12, wr * 0.34, -q[1] * wr * 0.2); holder.add(kb); }
     group.add(holder); spin.push(spn);
   });
+
+  // özel araç parçaları: kamyon, otobüs, kaykay, drezin...
+  if (md.kit) try {
+    var X_ = {
+      tarp: std({ color: 0x7a8a62, roughness: 0.92, metalness: 0 }), white: std({ color: 0xe9edf3, roughness: 0.45, metalness: 0.15 }),
+      wood: std({ color: 0x8b6b45, roughness: 0.85, metalness: 0 }), skin: std({ color: 0xe2b590, roughness: 0.8, metalness: 0 }),
+      pants: std({ color: 0x2a3555, roughness: 0.85, metalness: 0 }), shoe: std({ color: 0xf1f3f6, roughness: 0.6, metalness: 0.1 }),
+      amber: new THREE.MeshBasicMaterial({ color: 0xffb347 }), lamp: new THREE.MeshBasicMaterial({ color: 0xfff4c8 })
+    };
+    var wxk = md.arch === false ? 0.33 : Math.min(0.33, W / 2 - tw / 2 + 0.03);
+    var cyl = function (r, h, m, x, y, z, ax) { var cg = new THREE.CylinderGeometry(r, r, h, 12); if (ax === 'x') cg.rotateZ(Math.PI / 2); else if (ax === 'z') cg.rotateX(Math.PI / 2); return add(mesh(cg, m), x, y, z); };
+    var extraWheel = function (x, z) {
+      var hd = new THREE.Group(); hd.position.set(x, 0, z);
+      var sp = makeWheel2(wr, tw, wsp[0], wsp[1], wm, wtread); hd.add(sp);
+      sp.traverse(function (o) { if (o.isMesh) o.castShadow = true; }); group.add(hd); spin.push(sp);
+    };
+    var figure = function (px, py, pz, sc, lat) {     // küçük sürücü / işçi figürü
+      var fx = lat ? 1 : 0, fz = lat ? 0 : 1, k = sc || 1, sg;
+      [-1, 1].forEach(function (sg) {
+        box(0.065 * k, 0.36 * k, 0.065 * k, X_.pants, px + sg * 0.07 * k * fx, py + 0.22 * k, pz + sg * 0.12 * k * fz);
+        box((lat ? 0.09 : 0.2) * k, 0.05 * k, (lat ? 0.2 : 0.09) * k, X_.shoe, px + sg * 0.07 * k * fx, py + 0.025 * k, pz + sg * 0.12 * k * fz);
+      });
+      box(0.2 * k, 0.1 * k, 0.16 * k, X_.pants, px, py + 0.44 * k, pz);
+      box(0.22 * k, 0.28 * k, 0.15 * k, paint, px, py + 0.63 * k, pz);
+      add(mesh(new THREE.SphereGeometry(0.07 * k, 14, 10), X_.skin), px, py + 0.84 * k, pz);
+      var cp = add(mesh(new THREE.SphereGeometry(0.078 * k, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), stripeM), px, py + 0.855 * k, pz);
+      return k;
+    };
+    var K = md.kit, fz0 = -front, rz0 = -rear;
+    var redM = new THREE.MeshBasicMaterial({ color: 0xe53b3b }), bluM = new THREE.MeshBasicMaterial({ color: 0x3b7bff }), topC2 = md.cab ? md.cab[1][1] : 0.3;
+    if (K === 'tarp') {
+      box(W * 0.94, 0.02, 0.62, dark, 0, 0.285, 0.41);
+      [-1, 1].forEach(function (sd) { box(0.025, 0.12, 0.62, paint, sd * W * 0.47, 0.34, 0.41); });
+      box(W * 0.84, 0.2, 0.52, X_.tarp, 0, 0.39, 0.41); box(W * 0.62, 0.07, 0.52, X_.tarp, 0, 0.53, 0.41);
+      [0.24, 0.41, 0.58].forEach(function (zz) { box(W * 0.86, 0.012, 0.014, dark, 0, 0.47, zz); box(W * 0.86, 0.012, 0.014, dark, 0, 0.35, zz); });
+      box(W * 0.96, 0.05, 0.05, chrome, 0, 0.14, rz0 - 0.03);
+    } else if (K === 'offroad') {
+      box(W * 0.62, 0.03, 0.045, dark, 0, 0.64, -0.0); [-0.22, 0, 0.22].forEach(function (xx) { add(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.03), X_.lamp), xx * W, 0.665, -0.0); });
+      [-1, 1].forEach(function (sd) {
+        cyl(0.014, 0.24, dark, sd * W * 0.36, 0.4, 0.37, 'y'); cyl(0.012, 0.3, dark, sd * (W / 2 + 0.022), -0.02, -0.0, 'z');
+        cyl(0.014, 0.36, dark, sd * (W / 2 + 0.018), 0.36, -0.2, 'y');
+      });
+      cyl(0.014, W * 0.72, dark, 0, 0.52, 0.37, 'x');
+      box(W * 1.0, 0.05, 0.07, dark, 0, 0.02, fz0 - 0.01); box(W * 1.0, 0.05, 0.07, dark, 0, 0.02, rz0 + 0.01);
+    } else if (K === 'tractor' || K === 'trailer') {
+      box(W * 0.58, 0.035, 0.36, dark, 0, 0.27, 0.42); cyl(0.05, 0.03, chrome, 0, 0.295, 0.42, 'y');
+      box(2 * L.hwAt(front - 0.03) * 1.02, 0.07, 0.06, chrome, 0, 0.0, fz0 + 0.02); box(W * 0.98, 0.03, 0.1, paint, 0, 0.78, -0.42);
+      [-1, 1].forEach(function (sd) {
+        cyl(0.022, 0.6, chrome, sd * (W / 2 + 0.03), 0.52, 0.12, 'y'); cyl(0.06, 0.34, chrome, sd * (W / 2 + 0.05), 0.1, -0.02, 'z');
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.03), X_.amber), sd * W * 0.38, 0.79, -0.47);
+      });
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, 0.03), X_.amber), 0, 0.79, -0.47);
+      if (K === 'tractor') { [-1, 1].forEach(function (sd) { extraWheel(sd * wxk, AXLE_X + 0.24); }); }
+      else {
+        box(W * 0.98, 0.52, 0.94, X_.white, 0, 0.56, 0.61); box(W * 0.992, 0.1, 0.9, paint, 0, 0.35, 0.61);
+        box(W * 0.9, 0.4, 0.008, dark, 0, 0.58, 1.085); box(W * 0.992, 0.03, 0.9, stripeM, 0, 0.42, 0.61);
+        [0.3, 0.46, 0.62, 0.78, 0.94].forEach(function (zz) { box(W * 0.995, 0.5, 0.012, X_.white, 0, 0.56, zz); [-1, 1].forEach(function (sd) { box(0.006, 0.5, 0.016, dark, sd * W * 0.497, 0.56, zz); }); });
+        box(W * 0.9, 0.03, 0.4, dark, 0, 0.275, 0.4);
+        [0.78, 0.97].forEach(function (zz) { [-1, 1].forEach(function (sd) { extraWheel(sd * wxk, zz); }); });
+        [-1, 1].forEach(function (sd) { box(0.03, 0.08, 0.94, dark, sd * W * 0.45, 0.27, 0.61); });
+      }
+    } else if (K === 'bus') {
+      for (var zz = -0.58; zz <= 0.6; zz += 0.2) [-1, 1].forEach(function (sd) { box(0.012, 0.2, 0.16, glass, sd * (W / 2 + 0.002), 0.48, zz); });
+      var fw = 2 * L.hwAt(front - 0.03), rw2 = 2 * L.hwAt(rear + 0.03);
+      box(fw * 0.88, 0.26, 0.04, glass, 0, 0.42, fz0 + 0.018); box(rw2 * 0.74, 0.2, 0.04, glass, 0, 0.46, rz0 - 0.018);
+      box(fw * 0.5, 0.035, 0.012, X_.amber, 0, 0.535, fz0 - 0.003);
+      box(0.008, 0.38, 0.2, dark, W / 2 + 0.001, 0.2, -0.42);
+      box(W + 0.004, 0.045, 1.2, stripeM, 0, 0.24, 0.0); box(W * 0.4, 0.05, 0.34, chrome, 0, 0.69, 0.15);
+      [-1, 1].forEach(function (sd) { box(0.01, 0.1, 0.035, dark, sd * (W / 2 + 0.05), 0.48, fz0 + 0.14); box(0.05, 0.01, 0.01, dark, sd * (W / 2 + 0.025), 0.52, fz0 + 0.14); });
+      box(fw * 0.98, 0.045, 0.05, chrome, 0, -0.02, fz0 + 0.02); box(rw2 * 0.98, 0.045, 0.05, chrome, 0, -0.02, rz0 - 0.02);
+    } else if (K === 'skate') {
+      box(0.3, 0.004, 1.0, dark, 0, 0.1285, 0);
+      [-1, 1].forEach(function (sg) { box(0.14, 0.04, 0.09, dark, 0, 0.07, sg * AXLE_X); cyl(0.014, wxk * 2, chrome, 0, 0.0, sg * AXLE_X, 'x'); });
+      figure(0, 0.13, 0, 0.9, false);
+    } else if (K === 'draisine') {
+      box(0.5, 0.02, 1.26, X_.wood, 0, 0.11, 0);
+      [-1, 1].forEach(function (sg) { cyl(0.014, wxk * 2, chrome, 0, 0.0, sg * AXLE_X, 'x'); box(0.52, 0.06, 0.05, stripeM, 0, 0.07, sg * 0.6); });
+      box(0.06, 0.3, 0.07, dark, 0, 0.27, 0); cyl(0.025, 0.12, chrome, 0, 0.43, 0, 'x');
+      var bm = box(0.06, 0.05, 1.0, paint, 0, 0.43, 0); bm.rotation.x = 0.12;
+      [-1, 1].forEach(function (sg) { var hy = 0.43 - sg * 0.46 * Math.sin(0.12) + 0.03; cyl(0.014, 0.3, chrome, 0, hy, sg * 0.46, 'x'); figure(0, 0.11, sg * 0.52, 0.8, true); });
+
+    } else if (K === 'fire') {
+      box(W * 0.96, 0.36, 0.72, paint, 0, 0.42, 0.4); box(W * 0.975, 0.03, 0.72, X_.white, 0, 0.34, 0.4);
+      [0.2, 0.48].forEach(function (zz) { [-1, 1].forEach(function (sd) { box(0.008, 0.2, 0.22, dark, sd * W * 0.482, 0.44, zz); }); });
+      [-1, 1].forEach(function (sd) { box(0.018, 0.02, 0.86, chrome, sd * 0.1, 0.64, 0.38); });
+      for (var rr = 0; rr < 8; rr++) box(0.2, 0.014, 0.014, chrome, 0, 0.64, 0.0 + rr * 0.105);
+      box(W * 0.5, 0.03, 0.06, dark, 0, 0.79, -0.1); [-1, 1].forEach(function (sd) { add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.035, 0.05), sd < 0 ? redM : bluM), sd * W * 0.17, 0.815, -0.1); });
+      box(2 * L.hwAt(front - 0.03) * 1.02, 0.06, 0.06, chrome, 0, 0.0, fz0 + 0.02);
+    } else if (K === 'ambulance') {
+      [-1, 1].forEach(function (sd) {
+        box(0.012, 0.17, 0.05, redM, sd * (W / 2 + 0.003), 0.3, 0.2); box(0.012, 0.05, 0.17, redM, sd * (W / 2 + 0.003), 0.3, 0.2);
+        box(0.012, 0.03, 0.9, redM, sd * (W / 2 + 0.003), 0.16, 0.12);
+      });
+      box(W * 0.5, 0.03, 0.06, dark, 0, 0.535, -0.02); add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.05), redM), -W * 0.17, 0.56, -0.02); add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.05), bluM), W * 0.17, 0.56, -0.02);
+      box(W * 0.5, 0.012, 0.012, redM, 0, 0.3, rz0 + 0.004); box(0.012 * 4, 0.17, 0.012, redM, 0, 0.3, rz0 + 0.004);
+    } else if (K === 'farm') {
+      box(W * 0.62, 0.2, 0.6, paint, 0, 0.42, -0.3); cyl(0.02, 0.34, dark, 0.1, 0.62, -0.25, 'y');
+      box(W * 0.9, 0.06, 0.1, dark, 0, 0.3, fz0 - 0.01);
+      box(0.2, 0.06, 0.2, dark, 0, 0.35, 0.3); box(0.2, 0.2, 0.04, dark, 0, 0.47, 0.4);
+      cyl(0.012, 0.2, dark, 0, 0.43, 0.02, 'y'); var sw = add(mesh(new THREE.TorusGeometry(0.07, 0.01, 8, 18), dark), 0, 0.54, 0.02); sw.rotation.x = 1.2;
+      [-1, 1].forEach(function (sd) { cyl(0.014, 0.5, dark, sd * 0.2, 0.55, 0.42, 'y'); });
+      box(W * 0.9, 0.025, 0.5, paint, 0, 0.82, 0.3);
+      [-1, 1].forEach(function (sd) { box(tw + 0.05, 0.022, 0.4, paint, sd * wxk, 0.22, AXLE_X); });
+    } else if (K === 'mixer') {
+      var dr = mesh(new THREE.SphereGeometry(1, 22, 16), paint); dr.scale.set(W * 0.44, 0.3, 0.62); dr.rotation.x = -0.16; add(dr, 0, 0.58, 0.4);
+      [0.2, 0.4, 0.6].forEach(function (zz) { var rg = add(mesh(new THREE.TorusGeometry(0.2, 0.012, 8, 28), X_.white), 0, 0.58, zz); });
+      box(0.09, 0.05, 0.3, chrome, 0, 0.36, rz0 + 0.14);
+      box(W * 0.9, 0.05, 0.4, dark, 0, 0.27, 0.4); box(W * 0.98, 0.03, 0.1, paint, 0, 0.78, -0.42);
+      [-1, 1].forEach(function (sd) { cyl(0.022, 0.55, chrome, sd * (W / 2 + 0.03), 0.5, 0.0, 'y'); });
+      box(2 * L.hwAt(front - 0.03) * 1.02, 0.07, 0.06, chrome, 0, 0.0, fz0 + 0.02);
+    } else if (K === 'taxi') {
+      box(0.18, 0.05, 0.08, X_.amber, 0, topC2 + 0.03, -0.01);
+      for (var ck = 0; ck < 10; ck++) [-1, 1].forEach(function (sd) { box(0.008, 0.03, 0.06, ck % 2 ? dark : X_.white, sd * (W * 0.5 + 0.0), 0.17, -0.3 + ck * 0.065); });
+    } else if (K === 'police') {
+      box(W * 0.55, 0.03, 0.07, dark, 0, topC2 + 0.03, -0.02); add(new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.055), redM), -W * 0.17, topC2 + 0.055, -0.02); add(new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.035, 0.055), bluM), W * 0.17, topC2 + 0.055, -0.02);
+      [-1, 1].forEach(function (sd) { box(0.008, 0.07, 0.8, X_.white, sd * (W * 0.5 + 0.002), 0.14, 0.0); box(0.01, 0.025, 0.8, bluM, sd * (W * 0.5 + 0.004), 0.1, 0.0); });
+    }
+  } catch (ke) { try { window.__v2err = 'kit ' + String(ke && ke.stack || ke); } catch (x) {} }
   return spin;
 }
 
@@ -2099,6 +2294,7 @@ function qrot(q, x, y, z, o) {
 }
 function carCollisions() {
   for (var a = 0; a < nRacers - 1; a++) for (var b = a + 1; b < nRacers; b++) {
+    if ((racers[a].over && racers[a].kind === 'fell') || (racers[b].over && racers[b].kind === 'fell')) continue;
     var A = racers[a].body, B = racers[b].body, pa = A.position, pb = B.position;
     var ex = pa.x - pb.x, ey = pa.y - pb.y, ez = pa.z - pb.z;
     if (ex * ex + ey * ey + ez * ez > 6.25) continue;
@@ -2157,11 +2353,6 @@ function racerForces() {
     if (al + pt.r > T_HALF && al < T_HALF + LW + pt.r * 0.3 && h < sg.lip && h > -0.3) {
       var sd = sf.l > 0 ? -1 : 1;
       if (pushContact(pt, tmpR.x, tmpR.y, tmpR.z, sd * sf.rx, sd * sf.ry, sd * sf.rz, al + pt.r - T_HALF, false, 0, 0, 0, 1) > 0) touching++;
-    }
-    // bitiş tamponu
-    if (sf.j === N_SEG - 1 && h < 1.4 && h > -0.3 && al < T_HALF + LW) {
-      var dl = segs[N_SEG - 1].dir, pen = sf.aRaw + pt.r - S - 0.05;
-      if (pen > 0 && pushContact(pt, tmpR.x, tmpR.y, tmpR.z, -dl.x, -dl.y, -dl.z, pen, false, 0, 0, 0, 1) > 0) touching++;
     }
   }
   if (bst) { var fb = b.mass * BOOST_A; b.force.x += bst.dir.x * fb; b.force.y += bst.dir.y * fb; b.force.z += bst.dir.z * fb; }   // hızlandırıcı şerit
@@ -2313,7 +2504,7 @@ function placeCarAtStart() {
     carAtPath(START_DEF, lanes[i]);
     progress = startS; maxProg = startS; lastMax = startS; lastGroundProg = startS;
     topSpeed = 0; finished = false; groundHit = false; lowT = 0; airT = 0; stallT = 0; airTime = 0; onTrack = true;
-    r.over = false; r.kind = ''; r.finT = -1; r.overT = 0;
+    r.over = false; r.kind = ''; r.finT = -1; r.overT = 0; r.group.visible = true;
   }
   runStartS = startS; runT = 0; firstFinT = -1; focusIdx = 0; activeR = 0;
   gateT = -1; startGate.visible = false;
@@ -2394,7 +2585,7 @@ function setMode(play) {
 }
 
 function toGarage() {
-  state = 'garage'; placing = false; if (farView) setViewMode(0);
+  state = 'garage'; placing = false; tourRestore(); if (farView) setViewMode(0);
   el.result.hidden = true; el.placeHint.hidden = true; el.cancel.hidden = true;
   setRacerCount(1); setTrackWidth(mode === 'solo' ? 1 : duelN);
   if (mode !== 'duel') editIdx = 0;
@@ -2403,6 +2594,7 @@ function toGarage() {
   refreshCar();
   setMode(false);
   carGroup.position.set(0, PLAT_TOP + WHEEL_R, 0); carGroup.quaternion.set(0, 0, 0, 1);
+  if (tab === 'tour' && typeof renderTour === 'function') renderTour();
   updateBest();
 }
 
@@ -2418,12 +2610,12 @@ function botCfg(idx) {
   var used = []; for (var u = 0; u < (idx || 1); u++) used.push(racers[u].cfg.color);
   var tries = 0; do { c.color = Math.floor(Math.random() * COLORS.length); } while (used.indexOf(c.color) >= 0 && ++tries < 40);
   c.stripe = Math.floor(Math.random() * STRIPES.length);
-  c.model = Math.floor(Math.random() * MODELS.length); c.botStats = true;   // görünüm rastgele, fizik zorluk ayarına göre
+  c.model = (tourMatch && idx === 1 && tourMatch.model >= 0) ? tourMatch.model : Math.floor(Math.random() * MODELS.length); c.botStats = true;   // görünüm rastgele, fizik zorluk ayarına göre
   return c;
 }
 function raceNames() {
   racers[0].name = mode === 'bot' ? 'Sen' : (mode === 'duel' ? 'Oyuncu 1' : '');
-  racers[1].name = mode === 'bot' ? (nRacers > 2 ? 'Bot 1' : 'Bot') : 'Oyuncu 2';
+  racers[1].name = mode === 'bot' ? (tourMatch ? tourMatch.name : (nRacers > 2 ? 'Bot 1' : 'Bot')) : 'Oyuncu 2';
   for (var i = 2; i < nRacers; i++) racers[i].name = 'Bot ' + (i - (mode === 'duel' ? 1 : 0));
 }
 function makeTag(r) {
@@ -2447,6 +2639,9 @@ function startRun() {
     useRacer(racers[0]);
   }
   placeCarAtStart();
+  beginIntro();
+}
+function beginIntro() {
   state = 'intro'; introT = 0; placing = false;
   camFrom.copy(camera.position);
   setMode(true);
@@ -2492,7 +2687,7 @@ function describe(kind) {
   for (k = Math.max(0, gi - 1); k <= Math.min(N_SEG - 1, gi + 14); k++) if (segs[k].gap) nearGap = true;
   for (k = Math.max(0, gi - 25); k < gi; k++) if (segs[k].gap) afterGap = true;
   var mi = Math.min(N_SEG - 1, Math.max(0, Math.floor(maxProg / S)));
-  if (kind === 'stopped' && finished) { title = 'Bitiş çizgisi geçildi!'; cls = 'good'; text = 'Araç pisti tamamladı ve tamponun önünde durdu. Daha hızlısı için ağırlığı ve direnci azalt.'; }
+  if (kind === 'stopped' && finished) { title = 'Bitiş çizgisi geçildi!'; cls = 'good'; text = 'Araç pisti tamamladı; bitişten sonra yavaşladı ya da pistin ucundan çıktı. Daha hızlısı için ağırlığı ve direnci azalt.'; }
   else if (kind === 'fell' && nearGap) { title = 'Boşluğa düştü'; text = 'Rampadan yeterli hızla ayrılamadı. Hafif şase, düşük direnç, kaygan teker ve güçlü itiş çıkış hızını artırır.'; }
   else if (kind === 'fell' && afterGap) { title = 'İnişte pistten çıktı'; text = 'Zıpladıktan sonra iniş alanını aştı ya da kötü açıyla indi. Hızı düşürmeyi veya bırakma noktasını aşağı almayı dene.'; }
   else if (kind === 'fell' && segs[gi].curve) { title = 'Virajdan fırladı'; text = 'Viraja fazla hızlı girdi. Tutunan tekerlek, spoyler ve ağır şase aracı pistte tutar.'; }
@@ -2504,6 +2699,7 @@ function describe(kind) {
 
 function endRun(kind) {
   if (state !== 'running') return;
+  retryUI('');
   state = 'over'; endT = 0; camSt.orbit = Math.atan2(camera.position.x - carGroup.position.x, camera.position.z - carGroup.position.z);
   var ds = describe(kind), title = ds.title, text = ds.text, cls = ds.cls;
   el.resL1.textContent = 'Mesafe (m)'; el.resL2.textContent = 'Maks. km/h';
@@ -2519,6 +2715,7 @@ function endRun(kind) {
 
 function endRace() {
   if (state !== 'running') return;
+  retryUI('');
   state = 'over'; endT = 0;
   var res = [];
   for (var i = 0; i < nRacers; i++) {
@@ -2528,6 +2725,12 @@ function endRace() {
   var order = res.slice().sort(function (p, q) { if (p.fin !== q.fin) return p.fin ? -1 : 1; if (p.fin) return p.finT - q.finT; return q.dist - p.dist; });
   var a = order[0], b = order[1], w = a.i;
   if (a.fin && b.fin ? Math.abs(a.finT - b.finT) < 0.02 : (!a.fin && !b.fin && Math.abs(a.dist - b.dist) < 1)) w = -1;
+  if (tourSpec) {                          // bot–bot turnuva maçı: kazananı kaydet (berabereyse yazı-tura)
+    var sw = w < 0 ? (Math.random() < 0.5 ? 0 : 1) : w;
+    tourRecord(tourSpec.k, tourSpec.i, sw === 0 ? tourSpec.a : tourSpec.b);
+    if (!tourSpec.live) return;
+    w = sw;
+  }
   var title, cls = 'good';
   if (w < 0) { title = 'Berabere'; cls = 'mid'; }
   else if (mode === 'bot') { title = w === 0 ? 'Sen kazandın!' : (nRacers > 2 ? racers[w].name + ' kazandı · sen ' + (order.indexOf(res[0]) + 1) + '/' + nRacers : 'Bot kazandı'); cls = w === 0 ? 'good' : 'bad'; }
@@ -2536,16 +2739,18 @@ function endRace() {
     return (nRacers > 2 ? (k + 1) + '. ' : '') + x.r.name + ': ' + (x.fin ? 'bitişi ' + x.finT.toFixed(1) + ' sn’de geçti' : x.d.title.toLowerCase() + ' (' + Math.round(x.dist) + ' m)');
   });
   el.resTitle.textContent = title; el.resTitle.className = cls;
-  el.resText.textContent = lines.join('. ') + '.';
+  var tm = (tourMatch && mode === 'bot') ? tourReport(w) : '';
+  el.resText.textContent = lines.join('. ') + '.' + (tm ? '  ' + tm : '');
   var gain = 0;
-  res.forEach(function (x, k) { if (mode === 'duel' ? k < 2 : k === 0) gain += awardCoins(x.dist, x.fin, k === w ? 60 : 0); });
-  el.resCoin.textContent = 'Kazanç: +' + gain + ' jeton';
+  if (!tourSpec) res.forEach(function (x, k) { if (mode === 'duel' ? k < 2 : k === 0) gain += awardCoins(x.dist, x.fin, k === w ? 60 : 0); });
+  el.resCoin.textContent = tourSpec ? 'Turnuva maçı (izleme): jeton yok' : 'Kazanç: +' + gain + ' jeton';
   if (nRacers === 2) { el.resL1.textContent = racers[0].name + ' (m)'; el.resL2.textContent = racers[1].name + ' (m)'; el.resDist.textContent = Math.round(res[0].dist); el.resTop.textContent = Math.round(res[1].dist); }
   else { el.resL1.textContent = racers[0].name + ' (m)'; el.resL2.textContent = 'Lider (m)'; el.resDist.textContent = Math.round(res[0].dist); el.resTop.textContent = Math.round(a.dist); }
   el.resTime.textContent = (w >= 0 && res[w].fin ? res[w].finT : runT).toFixed(1);
-  focusIdx = w < 0 ? 0 : w; useRacer(racers[focusIdx]);
+  focusIdx = (mode === 'bot' || w < 0) ? 0 : w; useRacer(racers[focusIdx]);
   camSt.orbit = Math.atan2(camera.position.x - carGroup.position.x, camera.position.z - carGroup.position.z);
   el.status.textContent = 'Bitti';
+  if (tourSpec) retryUI('done');
 }
 
 /* ================================================================
@@ -2600,8 +2805,9 @@ function syncSndBtn() { el.sndBtn.textContent = AU.muted ? 'Ses: kapalı' : 'Ses
 function mkVoice() {
   var c = AU.ctx, v = {};
   function nz(type, f, q) { var n = c.createBufferSource(); n.buffer = AU.noise; n.loop = true; var fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; var g = c.createGain(); g.gain.value = 0; n.connect(fl); fl.connect(g); g.connect(AU.master); n.start(0, Math.random() * 1.5); return { f: fl, g: g }; }
-  v.roll = nz('bandpass', 400, 0.9); v.wind = nz('highpass', 900, 0.7);
-  v.o = c.createOscillator(); v.o.type = 'triangle'; v.o.frequency.value = 110; v.og = c.createGain(); v.og.gain.value = 0; v.o.connect(v.og); v.og.connect(AU.master); v.o.start();
+  v.low = nz('lowpass', 260, 1.1); v.hiss = nz('bandpass', 1600, 0.6); v.ring = nz('bandpass', 3400, 10); v.wind = nz('highpass', 900, 0.7);
+  v.lfo = c.createOscillator(); v.lfo.type = 'triangle'; v.lfo.frequency.value = 8; v.lg = c.createGain(); v.lg.gain.value = 0;
+  v.lfo.connect(v.lg); v.lg.connect(v.low.g.gain); v.lfo.start();
   return v;
 }
 function audioInit() {
@@ -2634,34 +2840,55 @@ function burst(dur, type, f0, f1, vol, delay) {
     s.connect(fl); fl.connect(g); g.connect(AU.master); s.start(t, Math.random()); s.stop(t + dur + 0.05);
   } catch (e) {}
 }
+/* metal gövde / plastik pist sesleri */
+function ping(f, dur, vol, delay) {   // ince metalik "tink": uyumsuz üst tonlar
+  [1, 2.76, 5.4].forEach(function (m, i) { tone(f * m, dur / (1 + i * 0.7), 'sine', vol / (1 + i * 1.3), delay, f * m * 0.985); });
+}
 function sfx(k, a) {
   if (!AU.ctx) return;
   if (k === 'click') tone(880, 0.05, 'sine', 0.07, 0, 600);
-  else if (k === 'launch') { burst(0.45, 'lowpass', 2400, 300, 0.35); tone(240, 0.3, 'triangle', 0.12, 0, 90); tone(660, 0.06, 'square', 0.05); }
-  else if (k === 'land') { var v = Math.min(0.55, 0.12 + (a || 0) * 0.12); burst(0.16, 'lowpass', 700, 150, v); tone(80, 0.18, 'sine', v * 0.8, 0, 38); if ((a || 0) > 0.9) burst(0.25, 'bandpass', 3200, 1500, v * 0.4, 0.02); }
-  else if (k === 'crash') { burst(0.6, 'bandpass', 500, 120, 0.55); tone(95, 0.5, 'sine', 0.45, 0, 32); for (var i = 0; i < 4; i++) burst(0.07, 'bandpass', 2500 + Math.random() * 2500, 0, 0.22, 0.12 + i * 0.09 + Math.random() * 0.05); }
+  else if (k === 'launch') { burst(0.04, 'bandpass', 2200, 1200, 0.4); tone(150, 0.08, 'sine', 0.3, 0, 70); burst(0.5, 'bandpass', 1800, 500, 0.18, 0.05); }
+  else if (k === 'land') {
+    var v = Math.min(0.55, 0.1 + (a || 0) * 0.12);
+    burst(0.05, 'bandpass', 2000 + Math.random() * 600, 1100, v);          // plastik "tak"
+    tone(170, 0.14, 'sine', v * 0.9, 0, 70);                               // içi boş pist gümlemesi
+    burst(0.22, 'bandpass', 420, 220, v * 0.6, 0.01);
+    ping(2600 + Math.random() * 500, 0.14, v * 0.3, 0.005);              // metal şasinin tınısı
+    if ((a || 0) > 0.9) { burst(0.05, 'bandpass', 2400, 1300, v * 0.7, 0.07); ping(3300, 0.12, v * 0.2, 0.08); }
+  }
+  else if (k === 'crash') {
+    burst(0.07, 'bandpass', 1800, 900, 0.5); tone(120, 0.25, 'sine', 0.4, 0, 45);
+    for (var i = 0; i < 6; i++) { var d = 0.1 + i * 0.1 + Math.random() * 0.05, vv = 0.3 / (1 + i * 0.35); burst(0.05, 'bandpass', 2000 + Math.random() * 1500, 1200, vv, d); ping(1900 + Math.random() * 2200, 0.16, vv * 0.5, d); }
+  }
+  else if (k === 'tick') { burst(0.035, 'bandpass', 2600 + Math.random() * 1400, 1700, a); tone(1400 + Math.random() * 500, 0.03, 'sine', a * 0.3, 0, 900); }
   else if (k === 'finish') { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.28, 'triangle', 0.16, i * 0.09); tone(f * 2, 0.2, 'sine', 0.04, i * 0.09); }); }
   else if (k === 'coin') { tone(988, 0.09, 'square', 0.06); tone(1319, 0.22, 'square', 0.06, 0.08); }
   else if (k === 'start') { tone(440, 0.09, 'square', 0.06); }
 }
-function voiceSet(v, roll, wind, hum, sp) {
-  var t = AU.ctx.currentTime;
-  v.roll.g.gain.setTargetAtTime(roll, t, 0.06); v.roll.f.frequency.setTargetAtTime(280 + sp * 38, t, 0.08);
-  v.wind.g.gain.setTargetAtTime(wind, t, 0.08); v.wind.f.frequency.setTargetAtTime(700 + sp * 25, t, 0.1);
-  v.og.gain.setTargetAtTime(hum, t, 0.08); v.o.frequency.setTargetAtTime(110 + sp * 7, t, 0.08);
+function voiceSet(v, k, air, att, sp) {
+  var t = AU.ctx.currentTime, on = air ? 0 : 1, kk = Math.pow(k, 0.8) * att * on;
+  v.low.g.gain.setTargetAtTime(kk * 0.5, t, 0.06); v.low.f.frequency.setTargetAtTime(220 + sp * 7, t, 0.08);
+  v.lg.gain.setTargetAtTime(kk * 0.3, t, 0.06); v.lfo.frequency.setTargetAtTime(Math.min(70, 5 + sp * 0.85), t, 0.08);
+  v.hiss.g.gain.setTargetAtTime(k * att * on * 0.2, t, 0.06); v.hiss.f.frequency.setTargetAtTime(1300 + sp * 55, t, 0.08);
+  v.ring.g.gain.setTargetAtTime(Math.pow(k, 1.5) * att * (air ? 0.2 : 1) * 0.1, t, 0.08); v.ring.f.frequency.setTargetAtTime(3000 + sp * 35, t, 0.1);
+  v.wind.g.gain.setTargetAtTime(Math.pow(Math.min(1, sp / 35), 1.5) * (air ? 0.5 : 0.2) * att, t, 0.08); v.wind.f.frequency.setTargetAtTime(700 + sp * 25, t, 0.1);
 }
-function sfxRacer(i, rr, sp, dt) {
+function sfxRacer(i, rr, sp, dt) { try { sfxRacer2(i, rr, sp, dt); } catch (e) {} }
+function sfxRacer2(i, rr, sp, dt) {
   if (!AU.ctx || AU.muted || !AU.voices[i]) return;
   var dcam = camera.position.distanceTo(carGroup.position), att = Math.max(0.06, Math.min(1, 14 / (dcam + 6)));
   var air = !onTrack, k = Math.min(1, sp / 30);
   if (air) rr._airD = (rr._airD || 0) + dt;
   else { if (rr._airD > 0.25) sfx('land', Math.min(3, rr._airD) * att); rr._airD = 0; }
-  voiceSet(AU.voices[i], air ? 0 : k * 0.55 * att, Math.pow(Math.min(1, sp / 35), 1.5) * (air ? 0.5 : 0.28) * att, k * 0.045 * att * (air ? 0.3 : 1), sp);
+  voiceSet(AU.voices[i], k, air, att, sp);
+  var sg = Math.floor(progress / S), now = AU.ctx.currentTime;   // pist parçası birleşim yerlerinde "tık"
+  if (!air && sg !== rr._sg) { var tv = (0.05 + k * 0.17) * att; if (tv > 0.012 && now - (rr._clk || 0) > 0.045) { rr._clk = now; sfx('tick', tv); } }
+  rr._sg = sg;
   AU.quiet = false;
 }
 function audioQuiet() {
   if (!AU.ctx || AU.quiet) return;
-  AU.quiet = true; AU.voices.forEach(function (v) { voiceSet(v, 0, 0, 0, 0); });
+  AU.quiet = true; AU.voices.forEach(function (v) { voiceSet(v, 0, true, 0, 0); });
 }
 window.addEventListener('pointerdown', audioInit, true);
 window.addEventListener('keydown', audioInit, true);
@@ -2750,6 +2977,7 @@ function panView(dx, dy) {
 function updateFarUI() {
   var play = state === 'running' || state === 'over';
   if (el.viewBtn.hidden === play) el.viewBtn.hidden = !play;
+  var rb = $('restartBtn'), rshow = play && !tourSpec; if (rb.hidden === rshow) rb.hidden = !rshow;
   var lb = !(play && viewMode === 1); if (el.lockBtn.hidden !== lb) el.lockBtn.hidden = lb;
   var tl = farView && play && fr.dist > 120; if (el.tilt.hidden === tl) el.tilt.hidden = !tl;
   if (canvas.style.filter !== (tl ? 'saturate(1.22) contrast(1.04)' : '')) canvas.style.filter = tl ? 'saturate(1.22) contrast(1.04)' : '';
@@ -3218,8 +3446,9 @@ function randomTrack() {
   return out.slice(0, MAX_PIECES);
 }
 function applyTab(t) {
+  if (tourBusy && t !== 'tour') return;
   tab = t; overview = (t === 'track'); if (typeof updateMiniVis === 'function') updateMiniVis();
-  [['car', 'tab-car', 'pane-car'], ['track', 'tab-track', 'pane-track'], ['coll', 'tab-coll', 'pane-coll'], ['work', 'tab-work', 'pane-work']].forEach(function (q) {
+  [['car', 'tab-car', 'pane-car'], ['track', 'tab-track', 'pane-track'], ['coll', 'tab-coll', 'pane-coll'], ['work', 'tab-work', 'pane-work'], ['tour', 'tab-tour', 'pane-tour']].forEach(function (q) {
     $(q[1]).setAttribute('aria-pressed', t === q[0] ? 'true' : 'false'); $(q[2]).hidden = t !== q[0];
   });
   el.hint.textContent = overview ? 'Pisti döndürmek için sürükle' : 'Aracı döndürmek için sürükle';
@@ -3227,11 +3456,61 @@ function applyTab(t) {
   if (overview) renderTrackUI();
   if (t === 'coll') { renderShelf(); ensureThumbs(); }
   if (t === 'work') renderWorkshop();
+  if (t === 'tour') renderTour();
 }
 $('tab-car').addEventListener('click', function () { applyTab('car'); });
 $('tab-track').addEventListener('click', function () { applyTab('track'); });
 $('tab-coll').addEventListener('click', function () { applyTab('coll'); });
 $('tab-work').addEventListener('click', function () { applyTab('work'); });
+$('tab-tour').addEventListener('click', function () { applyTab('tour'); });
+/* ---------- kayıtlı pistler: adlandırıp sakla, yükle, sil, kodla paylaş ---------- */
+var TRK_KEY = 'gg_tracks', savedTracks = [], svMsgT = 0;
+try { var st0 = JSON.parse(localStorage.getItem(TRK_KEY) || '[]'); if (Array.isArray(st0)) savedTracks = st0.filter(function (x) { return x && typeof x.name === 'string' && Array.isArray(x.t); }).slice(0, 20); } catch (e) {}
+function persistTracks() { try { localStorage.setItem(TRK_KEY, JSON.stringify(savedTracks)); return true; } catch (e) { return false; } }
+function svMsg(t) { var m = $('sv-msg'); m.textContent = t; clearTimeout(svMsgT); svMsgT = setTimeout(function () { m.textContent = ''; }, 4500); }
+function trackData() { return JSON.parse(JSON.stringify({ t: customTrack, s: useStart, f: useFinish })); }
+function applyTrackData(d) {
+  if (!d || !Array.isArray(d.t) || d.t.length > MAX_PIECES) return false;
+  var cl = d.t.map(cleanPiece); if (!cl.every(function (k) { return k !== null; })) return false;
+  customTrack = cl; useStart = d.s !== false; useFinish = d.f !== false;
+  selIdx = -1; selKey = null; commitTrack(); return true;
+}
+function trackCode() { return 'GGT1.' + btoa(unescape(encodeURIComponent(JSON.stringify(trackData())))); }
+function renderSavedTracks() {
+  var box = $('sv-list'); box.innerHTML = '';
+  if (!savedTracks.length) { var em = h('small', '', 'Henüz kayıtlı pist yok. Pistini ayarla, bir ad yaz ve Kaydet’e bas.'); em.style.color = 'var(--muted)'; box.appendChild(em); return; }
+  savedTracks.forEach(function (sv, i) {
+    var r = h('div', 'wk-row'), pcs = sv.t.length + ' parça' + (sv.s === false ? ' · rampasız' : '') + (sv.f === false ? ' · bitişsiz' : '');
+    r.appendChild(h('b', '', sv.name)); r.appendChild(h('small', '', pcs));
+    var bt = h('div'); bt.style.cssText = 'grid-row:1 / span 2;grid-column:2;display:flex;gap:4px';
+    var ld = h('button', 'tbtn', 'Yükle'); ld.type = 'button';
+    ld.addEventListener('click', function () { if (applyTrackData(sv)) svMsg('“' + sv.name + '” yüklendi.'); else svMsg('Bu kayıt okunamadı.'); });
+    var dl = h('button', 'tbtn', 'Sil'); dl.type = 'button';
+    dl.addEventListener('click', function () {
+      if (dl.dataset.sure) { savedTracks.splice(i, 1); persistTracks(); renderSavedTracks(); svMsg('Silindi.'); return; }
+      dl.dataset.sure = '1'; dl.textContent = 'Emin misin?'; setTimeout(function () { if (dl.isConnected) { delete dl.dataset.sure; dl.textContent = 'Sil'; } }, 3000);
+    });
+    bt.appendChild(ld); bt.appendChild(dl); r.appendChild(bt); box.appendChild(r);
+  });
+}
+$('sv-save').addEventListener('click', function () {
+  var nm = ($('sv-name').value || '').trim().slice(0, 24) || ('Pist ' + (savedTracks.length + 1)), d = trackData(); d.name = nm;
+  savedTracks = savedTracks.filter(function (x) { return x.name !== nm; }); savedTracks.unshift(d); savedTracks = savedTracks.slice(0, 20);
+  $('sv-name').value = ''; renderSavedTracks();
+  svMsg(persistTracks() ? '“' + nm + '” kaydedildi.' : 'Kaydedildi ama tarayıcı kalıcı depolamaya izin vermiyor; sayfa kapanınca kaybolabilir. Pist kodunu al ve sakla.'); sfx('coin');
+});
+$('sv-copy').addEventListener('click', function () {
+  var code = trackCode(), inp = $('sv-code'); inp.value = code; inp.focus(); inp.select();
+  var ok = false; try { ok = !!(navigator.clipboard && navigator.clipboard.writeText); } catch (e) {}
+  if (ok) navigator.clipboard.writeText(code).then(function () { svMsg('Pist kodu kopyalandı.'); }, function () { svMsg('Kod kutuya yazıldı; seçili, elle kopyalayabilirsin.'); });
+  else svMsg('Kod kutuya yazıldı; seçili, elle kopyalayabilirsin.');
+});
+$('sv-imp').addEventListener('click', function () {
+  var raw = ($('sv-code').value || '').replace(/\s+/g, ''), ok = false;
+  try { if (raw.indexOf('GGT1.') === 0) ok = applyTrackData(JSON.parse(decodeURIComponent(escape(atob(raw.slice(5)))))); } catch (e) { ok = false; }
+  svMsg(ok ? 'Pist içe aktarıldı.' : 'Kod geçersiz. “GGT1.” ile başlayan bir pist kodu yapıştır.');
+});
+renderSavedTracks();
 $('t-reset').addEventListener('click', function () { customTrack = DEFAULT_TRACK.slice(); useStart = true; useFinish = true; commitTrack(); });
 $('t-clear').addEventListener('click', function () { customTrack = []; commitTrack(); });
 $('t-scratch').addEventListener('click', function () { customTrack = [{ l: 24, p: 14, yaw: 0, bank: 0, high: 0, gap: 0 }]; useStart = false; useFinish = false; commitTrack(); });
@@ -3302,7 +3581,7 @@ function renderThumb(mi) {
   gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); sx.fillStyle = gr; sx.fillRect(0, 0, 128, 128);
   var blob = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.0), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.003; sc.add(blob);
-  var spin = buildCarModel(g, { model: mi, color: MODELS[mi].col, stripe: 0, aero: 1, mass: 1, grip: 1, spoiler: 0 }, 0.18);
+  var spin = buildCarModel(g, { model: mi, color: MODELS[mi].col % COLORS.length, stripe: 0, aero: 1, mass: 1, grip: 1, spoiler: 0 }, 0.18);
   g.position.y = 0.18;
   var cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 50);
   cam.position.set(2.1, 1.05, -2.7); cam.lookAt(0, 0.42, 0);
@@ -3324,7 +3603,7 @@ function renderThumb(mi) {
 }
 function fallbackThumb(mi) {
   var W = 360, H = 225, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  var c = cv.getContext('2d'), col = '#' + ('000000' + (MODELS[mi].col >>> 0).toString(16)).slice(-6);
+  var c = cv.getContext('2d'), col = COLORS[MODELS[mi].col % COLORS.length].c;
   c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.ellipse(180, 170, 125, 16, 0, 0, 7); c.fill();
   c.fillStyle = col; c.beginPath();
   c.moveTo(48, 150); c.lineTo(52, 118); c.quadraticCurveTo(110, 108, 140, 92);
@@ -3462,7 +3741,12 @@ el.launch.addEventListener('click', function () {
 });
 $('toGarage').addEventListener('click', toGarage);
 el.cancel.addEventListener('click', function () { if (state === 'intro' || state === 'place') toGarage(); });
-$('retry').addEventListener('click', function () { if (state === 'over') { state = 'garage'; startRun(); } });
+$('retry').addEventListener('click', function () {
+  if (state !== 'over') return;
+  if (tourFlow) { if (tourFlow === 'next' || tourFlow === 'again') { state = 'garage'; tourStart(); } return; }
+  state = 'garage'; startRun();
+});
+$('restartBtn').addEventListener('click', function () { if (tourSpec) return; if (state === 'running' || state === 'over') { state = 'garage'; el.result.hidden = true; try { startRun(); } catch (e) { showErr(e); toGarage(); } } });
 window.addEventListener('keydown', function (e) {
   if ((e.key === 'Enter' || e.key === ' ') && state === 'garage' && document.activeElement && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); startRun(); }
   else if ((e.key === 'Enter' || e.key === ' ') && state === 'place') { e.preventDefault(); release(); }
@@ -3541,7 +3825,7 @@ function tickRacer(r, dt, sp) {
   if (airTime === 0) lastGroundProg = progress;
   var kind = '', cp = carGroup.position;
   if (!isFinite(cp.x + cp.y + cp.z)) kind = 'fell';
-  else if (groundHit || cp.y < -3) kind = 'fell';
+  else if (groundHit || cp.y < -3 || (segs[lastIdx] && cp.y < segs[lastIdx].p0.y - 5)) kind = finished ? 'stopped' : 'fell';
   else if (maxProg - progress > 8 || stallT > 7) kind = 'stopped';
   else if (runT > 3 && sp < 0.7) { lowT += dt; if (lowT > 1.8) kind = 'stopped'; }
   else lowT = 0;
@@ -3564,6 +3848,7 @@ function update(dt) {
     introT += dt;
     if (introT >= INTRO_DUR) enterPlace();
   } else if (state === 'place') {
+    if (tourSpec && tourSpec.live) release();     // izlenen bot maçı: araçlar kendiliğinden bırakılır
     // araç elle tutuluyor: fizik çalışmaz
   } else if (state === 'running') {
     world.step(STEP, dt, 10);
@@ -3575,10 +3860,11 @@ function update(dt) {
       V.set(0, 0, -1).applyQuaternion(carGroup.quaternion);
       var vf = vel.x * V.x + vel.y * V.y + vel.z * V.z;
       wheelSpin.forEach(function (w) { w.rotation.x -= (vf / WHEEL_R) * dt; });
-      if (!rr.over) { tickRacer(rr, dt, sp); sfxRacer(ri, rr, sp, dt); } else if (AU.voices[ri]) voiceSet(AU.voices[ri], 0, 0, 0, 0);
+      if (!rr.over) { tickRacer(rr, dt, sp); sfxRacer(ri, rr, sp, dt); } else { if (AU.voices[ri]) voiceSet(AU.voices[ri], 0, true, 0, 0);
+        if (rr.kind === 'fell' && nRacers > 1 && runT - rr.overT > 1.2) { carGroup.visible = false; carBody.velocity.set(0, 0, 0); carBody.angularVelocity.set(0, 0, 0); carBody.position.set(carBody.position.x, -3000, carBody.position.z); } }
       if (!rr.over && maxProg > bestP) { bestP = maxProg; lead = ri; }
     }
-    if (lead >= 0) focusIdx = lead;
+    if (mode === 'bot' && !tourSpec && !racers[0].over) focusIdx = 0; else if (lead >= 0) focusIdx = lead;
     useRacer(racers[focusIdx]);
     var fsp = carBody.velocity.norm();
     el.speed.textContent = Math.round(fsp * SPEED_TO_KMH);
@@ -3616,6 +3902,201 @@ function frame(now) {
   } catch (e) { showErr(e); }
   if (firstFrame) { firstFrame = false; $('loading').style.display = 'none'; }
 }
+
+/* ================================================================
+   TURNUVA: 32 araç, tek maçlık eleme (knockout). Her maç iki araçla, rastgele bir pistte, gerçek fizikle yarışılır.
+   Senin maçlarını sen sürersin; diğerlerini izleyebilir ya da hızlı hesaplatabilirsin (elensen bile).
+================================================================ */
+/*TOUR-START*/
+var TOUR_KEY = 'gg_tour', tour = null, tourMatch = null, tourPrev = null, tourFlow = '', tourSure = false, tourSpec = null, tourBusy = false;
+var TOUR_NAMES = ['Şimşek', 'Fırtına', 'Kuzey', 'Atlas', 'Boran', 'Yıldırım', 'Çelik', 'Kasırga', 'Tufan', 'Pars', 'Kartal', 'Demir', 'Bora', 'Poyraz', 'Karaçam', 'Turbo', 'Nitro', 'Gölge', 'Alev', 'Rüzgâr', 'Kaplan', 'Aslan', 'Zirve', 'Vızır', 'Roket', 'Kıvılcım', 'Tilki', 'Şahin', 'Bulut', 'Çakıl', 'Savrulan'];
+var TOUR_ROUNDS = ['Son 32', 'Son 16', 'Çeyrek final', 'Yarı final', 'Final'], TOUR_PRIZE = [50, 100, 200, 400, 1000];
+function tourTier(r) { return r < 0.45 ? 0 : (r < 0.75 ? 1 : 2); }
+function tourSave() { try { localStorage.setItem(TOUR_KEY, JSON.stringify(tour)); } catch (e) {} }
+function tourLoad() {
+  try { var t = JSON.parse(localStorage.getItem(TOUR_KEY) || 'null'); if (t && Array.isArray(t.P) && t.P.length === 32 && Array.isArray(t.rounds) && Array.isArray(t.res) && typeof t.round === 'number') tour = t; var lr = t.res[t.res.length - 1]; if (t.rounds[t.rounds.length - 1].length === 2 && typeof lr[0] === 'number') t.done = true; } catch (e) {}
+}
+function tourNew() {
+  var P = [{ n: 'Sen', r: 0.5, m: -1, c: 0 }], i, ids = [];
+  for (i = 0; i < 31; i++) P.push({ n: TOUR_NAMES[i], r: 0.2 + Math.random() * 0.75, m: Math.floor(Math.random() * MODELS.length), c: Math.floor(Math.random() * 6) });
+  for (i = 0; i < 32; i++) ids.push(i);
+  for (i = 31; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+  tour = { P: P, rounds: [ids], res: [[]], round: 0, state: 'play', done: false };
+  tourSave();
+}
+function tourMatchesOf(k) {
+  var rd = tour.rounds[k], out = [], i;
+  for (i = 0; i < rd.length / 2; i++) out.push({ i: i, a: rd[2 * i], b: rd[2 * i + 1], w: tour.res[k][i] });
+  return out;
+}
+function tourOpp() { var rd = tour.rounds[tour.round], p = rd.indexOf(0); return p < 0 ? -1 : rd[p ^ 1]; }
+function tourAdvance() {                  // turdaki bütün maçlar bittiyse kazananlarla sonraki turu kur
+  var k = tour.round, rd = tour.rounds[k], res = tour.res[k], n = rd.length / 2, i;
+  for (i = 0; i < n; i++) if (typeof res[i] !== 'number') return false;
+  if (n === 1) { tour.done = true; tour.state = res[0] === 0 ? 'champ' : 'out'; return true; }
+  tour.rounds[k + 1] = res.slice(0, n); tour.res[k + 1] = []; tour.round = k + 1;
+  if (tour.rounds[k + 1].indexOf(0) < 0) tour.state = 'out';
+  return true;
+}
+function tourRecord(k, i, w) {
+  var rd = tour.rounds[k];
+  tour.res[k][i] = w;
+  if ((rd[2 * i] === 0 || rd[2 * i + 1] === 0) && w !== 0) tour.state = 'out';
+  tourAdvance(); tourSave();
+}
+function tourChampion() { if (!tour || !tour.done) return -1; var l = tour.res.length - 1; return tour.res[l][0]; }
+/*TOUR-END*/
+function retryUI(f) {
+  tourFlow = f; var b = $('retry');
+  b.hidden = false; b.textContent = f === 'next' ? 'Sıradaki Maç' : (f === 'again' ? 'Maçı Tekrarla' : 'Aynı Ayarla Tekrar');
+  if (f === 'done') b.hidden = true;
+}
+function tourRebuildChoices() {
+  buildChoice('g-mode', ['Tek araç', 'Bota karşı', '2 kişilik'], function () { return MODES.indexOf(mode); }, function (i) { applyMode(MODES[i]); });
+  buildChoice('g-count', ['2 araç', '3 araç', '4 araç'], function () { return duelN - 2; }, function (i) { duelN = i + 2; syncRows(); if (state === 'garage') setTrackWidth(duelN); });
+  buildChoice('g-diff', BOTS.map(function (b) { return b.n; }), function () { return diffIdx; }, function (i) { diffIdx = i; });
+}
+function tourSaveEnv() {                    // turnuvadan önceki mod, pist ve araç ayarlarını sakla
+  if (tourPrev) return;
+  tourPrev = { mode: mode, diff: diffIdx, duelN: duelN, ct: customTrack, us: useStart, uf: useFinish, cfg0: racers[0].cfg };
+}
+function tourRestore() {                    // turnuva dışına çıkınca her şeyi eski haline getir
+  tourMatch = null; tourSpec = null;
+  if (!tourPrev) return;
+  var p = tourPrev; tourPrev = null;
+  mode = p.mode; diffIdx = p.diff; duelN = p.duelN; customTrack = p.ct; useStart = p.us; useFinish = p.uf;
+  setCfg(racers[0], p.cfg0);
+  buildTrack(customTrack); loadBest(); updateBest();
+  el.launch.textContent = mode === 'solo' ? 'Piste Bırak' : 'Yarışı Başlat';
+  tourRebuildChoices(); syncRows();
+}
+function tourRandomTrack() { tourSaveEnv(); customTrack = randomTrack(); useStart = true; useFinish = true; buildTrack(customTrack); }
+function tourCfg(id) {                      // bir botun araç ayarı: gücüne göre zorluk düzeyi, kendi modeli ve rengi
+  var p = tour.P[id], b = BOTS[tourTier(p.r)], pk = b.pick[(id + tour.round) % b.pick.length], c = {};
+  Object.keys(pk).forEach(function (k) { c[k] = pk[k]; });
+  c.color = (p.c | 0) % COLORS.length; c.stripe = id % STRIPES.length; c.model = p.m >= 0 ? p.m : 0; c.botStats = true;
+  return c;
+}
+function tourPrepare(a, b) {                // iki botu rastgele bir pistte yarışa hazırla
+  tourRandomTrack();
+  mode = 'duel'; duelN = 2; editIdx = 0;
+  setRacerCount(2); setTrackWidth(2);
+  racers[0].name = tour.P[a].n; racers[1].name = tour.P[b].n;
+  setCfg(racers[0], tourCfg(a)); setCfg(racers[1], tourCfg(b));
+  for (var ri = 0; ri < 2; ri++) { useRacer(racers[ri]); applyPhysics(); buildCar(); makeTag(racers[ri]); }
+  useRacer(racers[0]); placeCarAtStart();
+}
+function tourWatch(k, i) {                  // bot maçını canlı izle
+  if (tourBusy || state !== 'garage' || !tour) return;
+  var m = tourMatchesOf(k)[i]; if (!m || typeof m.w === 'number') return;
+  tourSpec = { live: true, k: k, i: i, a: m.a, b: m.b };
+  tourPrepare(m.a, m.b); beginIntro();
+}
+function tourRunFast(k, i) {                // bot maçını ekrana çizmeden, senkron oyna
+  var m = tourMatchesOf(k)[i], muted = AU.muted;
+  tourSpec = { live: false, k: k, i: i, a: m.a, b: m.b };
+  AU.muted = true;
+  try {
+    tourPrepare(m.a, m.b); state = 'place'; release();
+    var g = 0; while (state === 'running' && g++ < 9000) update(1 / 60);
+  } catch (e) { try { console.error(e); } catch (x) {} }
+  AU.muted = muted;
+  if (typeof tour.res[k][i] !== 'number') tourRecord(k, i, Math.random() < 0.5 ? m.a : m.b);
+  tourSpec = null; state = 'garage';
+}
+function tourFastRun(untilDone) {           // oyuncunun maçı dışındaki bekleyen maçları hesapla
+  if (tourBusy || !tour || state !== 'garage') return;
+  tourBusy = true; renderTour();
+  (function next() {
+    if (!tour || tour.done) return end();
+    var k = tour.round, ms = tourMatchesOf(k), pend = null, cnt = 0, j;
+    for (j = 0; j < ms.length; j++) if (typeof ms[j].w !== 'number' && !(tour.state === 'play' && (ms[j].a === 0 || ms[j].b === 0))) { cnt++; if (!pend) pend = ms[j]; }
+    if (!pend) return end();
+    $('tour-note').textContent = TOUR_ROUNDS[k] + ' maçları hesaplanıyor… ' + cnt + ' maç kaldı (' + tour.P[pend.a].n + ' – ' + tour.P[pend.b].n + ')';
+    setTimeout(function () {
+      var before = tour.round;
+      try { tourRunFast(k, pend.i); } catch (e) { tourSpec = null; state = 'garage'; }
+      if (tour.round !== before && !untilDone) return end();
+      next();
+    }, 40);
+  })();
+  function end() { tourBusy = false; toGarage(); renderTour(); }
+}
+function tourStart() {                      // senin maçın: canlı, sen sürersin
+  if (!tour || tour.state !== 'play' || tourBusy) return;
+  var k = tour.round, rd = tour.rounds[k], pi = rd.indexOf(0), opp = rd[pi ^ 1], o = tour.P[opp];
+  if (pi < 0) return;
+  tourSaveEnv();
+  tourMatch = { opp: opp, name: o.n, model: o.m, round: k, mi: pi >> 1 };
+  tourRandomTrack();
+  mode = 'bot'; duelN = 2; diffIdx = tourTier(o.r); editIdx = 0;
+  el.launch.textContent = 'Yarışı Başlat'; tourRebuildChoices(); syncRows();
+  try { startRun(); } catch (e) { showErr(e); toGarage(); }
+}
+function tourReport(w) {                    // senin maçın bitti: sonucu işle, ekranda gösterilecek metni döndür
+  var k = tourMatch.round, mi = tourMatch.mi, opp = tourMatch.opp, msg;
+  if (w < 0) { retryUI('again'); return 'Turnuva: berabere kaldınız, maç yeni bir pistte tekrarlanacak.'; }
+  var won = w === 0;
+  tourRecord(k, mi, won ? 0 : opp);
+  if (won) {
+    var pz = TOUR_PRIZE[k]; wallet.coins += pz; saveWallet(); updateWalletUI(); sfx('coin');
+    if (tour.state === 'champ') { msg = 'TURNUVA ŞAMPİYONUSUN! +' + pz + ' jeton.'; retryUI('done'); }
+    else {
+      var adv = tour.round > k;
+      msg = TOUR_ROUNDS[k] + ' maçını kazandın (+' + pz + ' jeton). ' + (adv ? 'Tur tamamlandı; sıradaki: ' + TOUR_ROUNDS[tour.round] + ' · rakip ' + tour.P[tourOpp()].n + '.' : 'Turdaki diğer maçlar bekliyor: Turnuva sekmesinden izleyebilir ya da hızlı bitirebilirsin.');
+      retryUI(adv ? 'next' : 'done');
+    }
+  } else { msg = 'Turnuvadan elendin (' + TOUR_ROUNDS[k] + '). Turnuva sekmesinden diğer maçları izlemeye devam edebilirsin.'; retryUI('done'); }
+  tourMatch = null;
+  return msg;
+}
+function renderTour() {
+  var note = $('tour-note'), go = $('tour-go'), fast = $('tour-fast'), all = $('tour-all'), nw = $('tour-new'), list = $('tour-list'), box = $('tour-bracket');
+  box.innerHTML = ''; list.innerHTML = ''; go.hidden = true; fast.hidden = true; all.hidden = true; tourSure = false;
+  nw.textContent = tour ? 'Yeni turnuva' : 'Turnuvayı başlat'; nw.disabled = tourBusy;
+  if (!tour) { note.textContent = '32 araçlık eleme turnuvası: her maç iki araçla, rastgele bir pistte yarışılır; pistte daha iyi giden bir üst tura çıkar, kaybeden elenir. Beş tur geçersen şampiyon olursun. Senin maçlarını sen sürersin, diğerlerini izleyebilir ya da hızlı hesaplatabilirsin; elensen bile.'; return; }
+  var P = tour.P, k = tour.round, alive = tour.state === 'play', ms = tour.done ? [] : tourMatchesOf(k);
+  var myPend = alive && ms.some(function (m) { return (m.a === 0 || m.b === 0) && typeof m.w !== 'number'; });
+  var botPend = ms.filter(function (m) { return typeof m.w !== 'number' && m.a !== 0 && m.b !== 0; });
+  if (tour.done) { var ch = tourChampion(); note.textContent = ch === 0 ? 'Şampiyonsun! Turnuvayı kazandın.' : 'Turnuva bitti. Şampiyon: ' + P[ch].n + (alive ? '' : ' · sen elendin.'); }
+  else if (tourBusy) note.textContent = 'Maçlar hesaplanıyor…';
+  else if (myPend) { var o = P[tourOpp()]; note.textContent = TOUR_ROUNDS[k] + ' · rakibin: ' + o.n + ' (' + BOTS[tourTier(o.r)].n + '). Kazanırsan +' + TOUR_PRIZE[k] + ' jeton. Pist her maçta rastgele.'; }
+  else if (alive) note.textContent = TOUR_ROUNDS[k] + ' · maçını kazandın. Turdaki diğer maçları izle ya da hızlı bitir.';
+  else note.textContent = 'Elendin · ' + TOUR_ROUNDS[k] + ' sürüyor. Maçları izleyebilir ya da turnuvayı hızlandırabilirsin.';
+  go.hidden = !myPend; go.disabled = tourBusy;
+  fast.hidden = !botPend.length; fast.disabled = tourBusy;
+  all.hidden = tour.done || alive; all.disabled = tourBusy;
+  ms.forEach(function (m) {
+    var row = h('div', 'wk-row'), mine = m.a === 0 || m.b === 0, dec = typeof m.w === 'number';
+    row.appendChild(h('b', '', P[m.a].n + '  –  ' + P[m.b].n));
+    row.appendChild(h('small', '', dec ? 'Kazanan: ' + P[m.w].n : (mine ? 'Senin maçın' : 'Bekliyor')));
+    if (!dec && !(mine && alive)) { var wb = h('button', 'tbtn', 'İzle'); wb.type = 'button'; wb.disabled = tourBusy; wb.addEventListener('click', function () { tourWatch(k, m.i); }); row.appendChild(wb); }
+    list.appendChild(row);
+  });
+  tour.rounds.forEach(function (rd, kk) {
+    var col = h('div', 'tr-col'); col.appendChild(h('h3', '', TOUR_ROUNDS[kk]));
+    for (var i = 0; i < rd.length / 2; i++) {
+      var m = h('div', 'tr-m'), r = tour.res[kk][i];
+      [rd[2 * i], rd[2 * i + 1]].forEach(function (id) {
+        m.appendChild(h('div', 'tr-p' + (id === 0 ? ' me' : '') + (typeof r === 'number' ? (r === id ? ' w' : ' l') : ''), P[id].n));
+      });
+      col.appendChild(m);
+    }
+    box.appendChild(col);
+  });
+  var cc = h('div', 'tr-col'); cc.appendChild(h('h3', '', 'Şampiyon'));
+  var chm = h('div', 'tr-m'), cid = tourChampion(); chm.appendChild(h('div', 'tr-p' + (cid === 0 ? ' me w' : (cid >= 0 ? ' w' : '')), cid >= 0 ? P[cid].n : '?')); cc.appendChild(chm); box.appendChild(cc);
+}
+$('tour-go').addEventListener('click', function () { if (state === 'garage') tourStart(); });
+$('tour-fast').addEventListener('click', function () { tourFastRun(false); });
+$('tour-all').addEventListener('click', function () { tourFastRun(true); });
+$('tour-new').addEventListener('click', function () {
+  var b = $('tour-new');
+  if (tourBusy) return;
+  if (tour && !tour.done && !tourSure) { tourSure = true; b.textContent = 'Emin misin? Mevcut turnuva silinir'; setTimeout(function () { if (tourSure) { tourSure = false; b.textContent = 'Yeni turnuva'; } }, 3500); return; }
+  tourSure = false; tourNew(); renderTour();
+});
+tourLoad();
 
 /* ---------- başlat ---------- */
 buildSeg('g-mass', 'mass'); buildSeg('g-aero', 'aero'); buildSeg('g-grip', 'grip'); buildSw('g-color', COLORS, 'color');
